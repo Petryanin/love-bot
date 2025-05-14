@@ -12,9 +12,7 @@ import (
 
 func CreateBot(cfg *config.Config) *bot.Bot {
 	log.Print("creating bot...")
-	opts := []bot.Option{bot.WithDebug()}
-
-	b, err := bot.New(cfg.TgToken, opts...)
+	b, err := bot.New(cfg.TgToken)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    image: love-bot:latest
+    container_name: love-bot
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    env_file:
+      - .env
