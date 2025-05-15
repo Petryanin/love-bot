@@ -132,7 +132,7 @@ func plansAddingAwaitEventTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		parsedDT, err := appCtx.DucklingClient.ParseDateTime(text, time.Now())
+		parsedDT, err := appCtx.DateTimeService.ParseDateTime(text, time.Now())
 		if err != nil {
 			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -168,7 +168,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		if text == config.SameTimeButton {
 			remind = sess.TempEvent
 		} else {
-			parsedDT, err := appCtx.DucklingClient.ParseDateTime(text, time.Now())
+			parsedDT, err := appCtx.DateTimeService.ParseDateTime(text, time.Now())
 			if err != nil {
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё",
@@ -196,7 +196,10 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			})
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: appCtx.PlanService.PartnersChatIDs,
-				Text:   fmt.Sprintf("Твоя любимка создала новый план: %s в %s", p.Description, p.EventTime.Format("02 Jan 2006 15:04")),
+				Text: fmt.Sprintf(
+					"Твоя любимка создала новый план: %s на %s",
+					p.Description,
+					appCtx.DateTimeService.FormatDateRu(p.EventTime)),
 			})
 		}
 		sess.State = services.StateMenu
@@ -301,7 +304,7 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				fmt.Sprintf("%d) %s (%s)",
 					i+1,
 					p.Description,
-					p.EventTime.Format(config.DTLayout), // или любой ваш формат
+					appCtx.DateTimeService.FormatDateRu(p.EventTime),
 				),
 			)
 		}

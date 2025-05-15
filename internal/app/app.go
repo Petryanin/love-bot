@@ -3,21 +3,17 @@ package app
 
 import (
 	"github.com/Petryanin/love-bot/internal/config"
-    "github.com/Petryanin/love-bot/internal/clients"
-    "github.com/Petryanin/love-bot/internal/services"
+	"github.com/Petryanin/love-bot/internal/services"
 )
 
 type AppContext struct {
-    Cfg              *config.Config
+	Cfg *config.Config
 
-    WeatherClient    *clients.OpenWeatherMapClient
-    DucklingClient   *clients.DucklingClient
-    CatClient        *clients.CatAASClient
-
-    RelationshipService       *services.RelationshipService
-    ComplimentService    *services.ComplimentService
-    ImageComplimentService  *services.ImageComplimentService
-    PlanService      *services.PlanService
-    SessionManager   *services.SessionManager
-    WeatherService   *services.WeatherService
+	RelationshipService    *services.RelationshipService
+	ComplimentService      *services.ComplimentService
+	ImageComplimentService *services.ImageComplimentService
+	PlanService            *services.PlanService
+	SessionManager         *services.SessionManager
+	WeatherService         *services.WeatherService
+	DateTimeService        *services.DateTimeService
 }

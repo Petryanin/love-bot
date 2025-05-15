@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type parseResponse struct {
+type ParseResponse struct {
 	Dim   string `json:"dim"`
 	Value struct {
 		Value any `json:"value"` // обычно строка ISO
@@ -40,7 +40,7 @@ func NewDucklingClient(baseURL, locale, tz string) *DucklingClient {
 	}
 }
 
-func (c *DucklingClient) ParseDateTime(text string, ref time.Time) (time.Time, error) {
+func (c *DucklingClient) Parse(text string, ref time.Time) ([]ParseResponse, error) {
 	data := url.Values{}
 	data.Set("text", text)
 	data.Set("locale", c.Locale)
@@ -58,28 +58,14 @@ func (c *DucklingClient) ParseDateTime(text string, ref time.Time) (time.Time, e
 	)
 	if err != nil {
 		log.Print("duckling: failed to get response: %w", err)
-		return time.Time{}, err
+		return nil, err
 	}
 
-	var items []parseResponse
-	if err := json.Unmarshal(responseBody, &items); err != nil {
-		log.Print("duckling: failed to parse response: %w", err)
-		return time.Time{}, err
+	var result []ParseResponse
+	if err := json.Unmarshal(responseBody, &result); err != nil {
+		log.Print("duckling: failed to parse json response: %w", err)
+		return nil, err
 	}
 
-	for _, it := range items {
-		if it.Dim == "time" {
-			if value, ok := it.Value.Value.(string); ok {
-				dt, err := time.Parse(time.RFC3339Nano, value)
-				if err != nil {
-					log.Print("duckling: wrong datetime format: %w", err)
-					return time.Time{}, err
-				}
-				return dt, nil
-			}
-		}
-	}
-
-	log.Printf("duckling: failed to parse datetime %q", text)
-	return time.Time{}, fmt.Errorf("duckling: failed to parse datetime %q", text)
+	return result, nil
 }

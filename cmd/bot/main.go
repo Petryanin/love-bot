@@ -25,16 +25,13 @@ func main() {
 	appCtx := &app.AppContext{
 		Cfg: cfg,
 
-		WeatherClient:  clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey),
-		DucklingClient: clients.NewDucklingClient(cfg.DucklingAPIURL, cfg.DucklingLocale, cfg.DucklingTZ),
-		CatClient:      clients.NewCatAASClient(cfg.CatAPIURL),
-
 		RelationshipService:    services.NewRelationshipService(cfg.DatingStartDate.In(cfg.DatingStartTZ)),
 		ComplimentService:      services.NewComplimentService(),
 		ImageComplimentService: services.NewImageComplimentService(clients.NewCatAASClient(cfg.CatAPIURL), cfg.FontPath),
 		PlanService:            services.NewPlanService(cfg.DBPath, cfg.TgPartnerCharID),
 		SessionManager:         services.NewSessionManager(),
 		WeatherService:         services.NewWeatherService(clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey), cfg.WeatherAPICity),
+		DateTimeService:         services.NewDateTimeService(clients.NewDucklingClient(cfg.DucklingAPIURL, cfg.DucklingLocale, cfg.DucklingTZ),),
 	}
 
 	bot := bot.CreateBot(appCtx)
