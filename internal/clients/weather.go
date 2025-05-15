@@ -50,14 +50,14 @@ func (c *OpenWeatherMapClient) CurrentWeather(city string) (*CurrentWeatherRespo
 	u.RawQuery = q.Encode()
 
 	log.Printf("requesting %q", u.String())
-	responseBody, err := c.DoRequest("GET", u.String(), nil)
+	responseBody, err := c.DoRequest("GET", u.String(), nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to request %q: %w", u.String(), err)
 	}
 
 	var data CurrentWeatherResponse
-	if err := json.Unmarshal(*responseBody, &data); err != nil {
-		return nil, fmt.Errorf("failed to decode json %+v: %w", *responseBody, err)
+	if err := json.Unmarshal(responseBody, &data); err != nil {
+		return nil, fmt.Errorf("failed to decode json %+v: %w", responseBody, err)
 	}
 
 	return &data, nil

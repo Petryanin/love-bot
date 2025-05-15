@@ -13,8 +13,9 @@ type Config struct {
 	DefaultTZ *time.Location `mapstructure:"DEFAULT_TZ"`
 	FontPath  string         `mapstructure:"FONT_PATH"`
 
-	TgToken string `mapstructure:"TG_TOKEN"`
-	TgDebug bool   `mapstructure:"TG_DEBUG"`
+	TgToken         string `mapstructure:"TG_TOKEN"`
+	TgDebug         bool   `mapstructure:"TG_DEBUG"`
+	TgPartnerCharID int64  `mapstructure:"TG_PARTNER_CHAT_ID"`
 
 	DBPath string `mapstructure:"DB_PATH"`
 
@@ -26,6 +27,10 @@ type Config struct {
 
 	DatingStartDate time.Time      `mapstructure:"DATING_START_DATE"`
 	DatingStartTZ   *time.Location `mapstructure:"DATING_START_TZ"`
+
+	DucklingAPIURL string `mapstructure:"DUCKLING_API_URL"`
+	DucklingTZ     string `mapstructure:"DUCKLING_TZ"`
+	DucklingLocale string `mapstructure:"DUCKLING_LOCALE"`
 }
 
 func Load(path string) (*Config, error) {

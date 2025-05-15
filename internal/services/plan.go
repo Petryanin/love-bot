@@ -24,10 +24,10 @@ type PlanService struct {
 	PartnersChatIDs int64
 }
 
-func NewPlanService(dbPath string, partnerChatID int64) (*PlanService, error) {
+func NewPlanService(dbPath string, partnerChatID int64) *PlanService {
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		return nil, err
+		log.Fatal("failed to open a database")
 	}
 	// создаём таблицу, если нет
 	_, err = db.Exec(
@@ -40,9 +40,9 @@ func NewPlanService(dbPath string, partnerChatID int64) (*PlanService, error) {
 		)`,
 	)
 	if err != nil {
-		return nil, err
+		log.Fatal("failed to create table")
 	}
-	return &PlanService{db: db, PartnersChatIDs: partnerChatID}, nil
+	return &PlanService{db: db, PartnersChatIDs: partnerChatID}
 }
 
 func (s *PlanService) Add(p *Plan) error {

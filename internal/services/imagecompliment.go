@@ -10,7 +10,7 @@ import (
 )
 
 type ImageComplimentService struct {
-	Client    *clients.CatAAS
+	Client    *clients.CatAASClient
 	FontPath  string
 	FontSize  float64
 	ImgWidth  int
@@ -18,7 +18,7 @@ type ImageComplimentService struct {
 }
 
 // конструктор
-func NewImageComplimentService(client *clients.CatAAS, fontPath string) *ImageComplimentService {
+func NewImageComplimentService(client *clients.CatAASClient, fontPath string) *ImageComplimentService {
 	return &ImageComplimentService{
 		Client:    client,
 		FontPath:  fontPath,

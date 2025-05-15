@@ -4,12 +4,12 @@ import (
 	"context"
 	"log"
 
-	"github.com/Petryanin/love-bot/internal/services"
+	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
-func WeatherHandler(ws *services.WeatherService) bot.HandlerFunc {
+func WeatherHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		chatID := update.Message.Chat.ID
 
@@ -18,7 +18,7 @@ func WeatherHandler(ws *services.WeatherService) bot.HandlerFunc {
 			Action: models.ChatActionTyping,
 		})
 
-		summary, err := ws.TodaySummary()
+		summary, err := appCtx.WeatherService.TodaySummary()
 		if err != nil {
 			log.Printf("failed to get weather summary: %v", err.Error())
 			summary = "Не удалось получить погоду 😕"

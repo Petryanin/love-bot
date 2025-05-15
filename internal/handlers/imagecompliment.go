@@ -6,23 +6,23 @@ import (
 	"log"
 	"time"
 
-	"github.com/Petryanin/love-bot/internal/services"
+	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
-func ComplimentImageHandler(ics *services.ImageComplimentService, cs *services.ComplimentService) bot.HandlerFunc {
+func ComplimentImageHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		chatID := update.Message.Chat.ID
 
 		b.SendChatAction(ctx, &bot.SendChatActionParams{
-            ChatID: chatID,
-            Action: models.ChatActionUploadPhoto,
-        })
+			ChatID: chatID,
+			Action: models.ChatActionUploadPhoto,
+		})
 
-		compliment := cs.Random()
+		compliment := appCtx.ComplimentService.Random()
 
-		imgBytes, err := ics.Generate(compliment)
+		imgBytes, err := appCtx.ImageComplimentService.Generate(compliment)
 		if err != nil {
 			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{

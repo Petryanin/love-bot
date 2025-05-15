@@ -23,15 +23,23 @@ func NewBaseClient(baseURL string) *BaseClient {
 	}
 }
 
-func (c *BaseClient) DoRequest(method, url string, body io.Reader) (*[]byte, error) {
+func (c *BaseClient) DoRequest(
+	method, url string,
+	body io.Reader,
+	headers map[string]string,
+) ([]byte, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to form a request: %s", err)
+		return nil, fmt.Errorf("failed to form request: %w", err)
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to do a request: %s", err)
+		return nil, fmt.Errorf("failed to do request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -44,5 +52,5 @@ func (c *BaseClient) DoRequest(method, url string, body io.Reader) (*[]byte, err
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
-	return &responseBody, nil
+	return responseBody, nil
 }

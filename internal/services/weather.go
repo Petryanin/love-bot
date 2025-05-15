@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	clients "github.com/Petryanin/love-bot/internal/clients"
+	"github.com/Petryanin/love-bot/internal/clients"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

@@ -9,15 +9,15 @@ import (
 	"strconv"
 )
 
-type CatAAS struct {
+type CatAASClient struct {
 	*BaseClient
 }
 
-func NewCatAASClient(baseURL string) *CatAAS {
-	return &CatAAS{BaseClient: NewBaseClient(baseURL)}
+func NewCatAASClient(baseURL string) *CatAASClient {
+	return &CatAASClient{BaseClient: NewBaseClient(baseURL)}
 }
 
-func (c *CatAAS) Image(width, height int) (*image.Image, error) {
+func (c *CatAASClient) Image(width, height int) (*image.Image, error) {
 	u, err := url.Parse(c.BaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse url %q: %w", c.BaseURL, err)
@@ -29,12 +29,12 @@ func (c *CatAAS) Image(width, height int) (*image.Image, error) {
 	u.RawQuery = q.Encode()
 
 	log.Printf("requesting %q", u.String())
-	responseBody, err := c.DoRequest("GET", u.String(), nil)
+	responseBody, err := c.DoRequest("GET", u.String(), nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to request %q: %w", u.String(), err)
 	}
 
-	img, imgName, err := image.Decode(bytes.NewReader(*responseBody))
+	img, imgName, err := image.Decode(bytes.NewReader(responseBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode image %s: %w", imgName, err)
 	}

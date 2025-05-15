@@ -8,3 +8,12 @@ services:
       - ./data:/data
     env_file:
       - .env
+    depends_on:
+      - duckling
+
+  duckling:
+    image: rasa/duckling:0.2.0.2-r3
+    container_name: duckling
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

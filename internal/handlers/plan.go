@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/Petryanin/love-bot/internal/config"
 	"github.com/Petryanin/love-bot/internal/keyboards"
 	"github.com/Petryanin/love-bot/internal/services"
@@ -15,7 +16,7 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func PlansHandler(cfg *config.Config, sm *services.SessionManager, ps *services.PlanService) bot.HandlerFunc {
+func PlansHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		b.SendChatAction(ctx, &bot.SendChatActionParams{
@@ -23,7 +24,7 @@ func PlansHandler(cfg *config.Config, sm *services.SessionManager, ps *services.
 			Action: models.ChatActionTyping,
 		})
 
-		sess := sm.Get(chatID)
+		sess := appCtx.SessionManager.Get(chatID)
 		text := upd.Message.Text
 
 		var allowedMap = map[string]struct{}{
@@ -42,19 +43,19 @@ func PlansHandler(cfg *config.Config, sm *services.SessionManager, ps *services.
 		switch sess.State {
 		// Главное меню “Планы”
 		case services.StateMenu:
-			plansMenuHandler(cfg, sm, ps)(ctx, b, upd)
+			plansMenuHandler(appCtx)(ctx, b, upd)
 			return
 		// Ввод описания
 		case services.StateAddingAwaitDesc:
-			plansAddingAwaitDescHandler(cfg, sm, ps)(ctx, b, upd)
+			plansAddingAwaitDescHandler(appCtx)(ctx, b, upd)
 			return
 		// Ввод времени события
 		case services.StateAddingAwaitEventTime:
-			plansAddingAwaitEventTimeHandler(cfg, sm, ps)(ctx, b, upd)
+			plansAddingAwaitEventTimeHandler(appCtx)(ctx, b, upd)
 			return
 			// Ввод времени напоминания
 		case services.StateAddingAwaitRemindTime:
-			plansAddingAwaitRemindTimeHandler(cfg, sm, ps)(ctx, b, upd)
+			plansAddingAwaitRemindTimeHandler(appCtx)(ctx, b, upd)
 			return
 		}
 
@@ -63,11 +64,11 @@ func PlansHandler(cfg *config.Config, sm *services.SessionManager, ps *services.
 	}
 }
 
-func plansMenuHandler(cfg *config.Config, sm *services.SessionManager, ps *services.PlanService) bot.HandlerFunc {
+func plansMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := sm.Get(chatID)
+		sess := appCtx.SessionManager.Get(chatID)
 
 		if text == config.PlansButton || text == config.CancelButton {
 			sess.State = services.StateMenu
@@ -90,76 +91,76 @@ func plansMenuHandler(cfg *config.Config, sm *services.SessionManager, ps *servi
 		}
 		// Список планов
 		if text == config.ListButton {
-			PlansListHandler(cfg, sm, ps)(ctx, b, upd)
+			PlansListHandler(appCtx)(ctx, b, upd)
 		}
 		if text == config.BackButton {
-			sm.Reset(chatID)
+			appCtx.SessionManager.Reset(chatID)
 			DefaultReplyHandler(ctx, b, upd)
 		}
 	}
 }
 
-func plansAddingAwaitDescHandler(cfg *config.Config, sm *services.SessionManager, ps *services.PlanService) bot.HandlerFunc {
+func plansAddingAwaitDescHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := sm.Get(chatID)
+		sess := appCtx.SessionManager.Get(chatID)
 
 		if text == config.CancelButton {
-			sm.Reset(chatID)
-			PlansHandler(cfg, sm, ps)(ctx, b, upd)
+			appCtx.SessionManager.Reset(chatID)
+			PlansHandler(appCtx)(ctx, b, upd)
 			return
 		}
 		sess.TempDesc = text
 		sess.State = services.StateAddingAwaitEventTime
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: chatID,
-			Text:   "Когда это событие произойдёт? (Укажи в формате DD-MM-YYYY HH:MM)",
+			Text:   "Когда это событие произойдёт?",
 		})
 	}
 }
 
-func plansAddingAwaitEventTimeHandler(cfg *config.Config, sm *services.SessionManager, ps *services.PlanService) bot.HandlerFunc {
+func plansAddingAwaitEventTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := sm.Get(chatID)
+		sess := appCtx.SessionManager.Get(chatID)
 
 		if text == config.CancelButton {
-			sm.Reset(chatID)
-			PlansHandler(cfg, sm, ps)(ctx, b, upd)
+			appCtx.SessionManager.Reset(chatID)
+			PlansHandler(appCtx)(ctx, b, upd)
 			return
 		}
 
-		t, err := time.ParseInLocation(config.DTLayout, text, cfg.DefaultTZ)
+		parsedDT, err := appCtx.DucklingClient.ParseDateTime(text, time.Now())
 		if err != nil {
+			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё. Формат должен быть DD-MM-YYYY HH:MM",
+				ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё",
 			})
 			return
 		}
-		sess.TempEvent = t
+
+		sess.TempEvent = parsedDT
 		sess.State = services.StateAddingAwaitRemindTime
+
 		b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID: chatID,
-			Text:   fmt.Sprintf(
-                "Когда напомнить? (формат DD-MM-YYYY HH:MM, или можешь нажать %s)",
-                config.SameTimeButton,
-            ),
-            ReplyMarkup: keyboards.PlanMenuRemindKeyboard(),
+			ChatID:      chatID,
+			Text:        "Когда напомнить?",
+			ReplyMarkup: keyboards.PlanMenuRemindKeyboard(),
 		})
 	}
 }
 
-func plansAddingAwaitRemindTimeHandler(cfg *config.Config, sm *services.SessionManager, ps *services.PlanService) bot.HandlerFunc {
+func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := sm.Get(chatID)
+		sess := appCtx.SessionManager.Get(chatID)
 
 		if text == config.CancelButton {
-			sm.Reset(chatID)
-			PlansHandler(cfg, sm, ps)(ctx, b, upd)
+			appCtx.SessionManager.Reset(chatID)
+			PlansHandler(appCtx)(ctx, b, upd)
 			return
 		}
 
@@ -167,14 +168,14 @@ func plansAddingAwaitRemindTimeHandler(cfg *config.Config, sm *services.SessionM
 		if text == config.SameTimeButton {
 			remind = sess.TempEvent
 		} else {
-			r, err := time.ParseInLocation(config.DTLayout, text, cfg.DefaultTZ)
+			parsedDT, err := appCtx.DucklingClient.ParseDateTime(text, time.Now())
 			if err != nil {
 				b.SendMessage(ctx, &bot.SendMessageParams{
-					ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё. Формат должен быть DD-MM-YYYY HH:MM",
+					ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё",
 				})
 				return
 			}
-			remind = r
+			remind = parsedDT
 		}
 		sess.TempRemind = remind
 
@@ -185,7 +186,7 @@ func plansAddingAwaitRemindTimeHandler(cfg *config.Config, sm *services.SessionM
 			EventTime:   sess.TempEvent,
 			RemindTime:  sess.TempRemind,
 		}
-		if err := ps.Add(p); err != nil {
+		if err := appCtx.PlanService.Add(p); err != nil {
 			log.Fatal(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "😥Ошибка при сохранении"})
 		} else {
@@ -194,7 +195,7 @@ func plansAddingAwaitRemindTimeHandler(cfg *config.Config, sm *services.SessionM
 				ReplyMarkup: keyboards.PlanMenuKeyboard(),
 			})
 			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: ps.PartnersChatIDs,
+				ChatID: appCtx.PlanService.PartnersChatIDs,
 				Text:   fmt.Sprintf("Твоя любимка создала новый план: %s в %s", p.Description, p.EventTime.Format("02 Jan 2006 15:04")),
 			})
 		}
@@ -202,7 +203,7 @@ func plansAddingAwaitRemindTimeHandler(cfg *config.Config, sm *services.SessionM
 	}
 }
 
-func PlansDetailsHandler(cfg *config.Config, ps *services.PlanService) bot.HandlerFunc {
+func PlansDetailsHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 			CallbackQueryID: upd.CallbackQuery.ID,
@@ -218,7 +219,7 @@ func PlansDetailsHandler(cfg *config.Config, ps *services.PlanService) bot.Handl
 			log.Print("failed to get planID from callback data: %w", err)
 		}
 
-		plan, err := ps.GetByID(planID, cfg)
+		plan, err := appCtx.PlanService.GetByID(planID, appCtx.Cfg)
 		if err != nil {
 			// todo add error handler
 			log.Print("failed to get plan from DB: %w", err)
@@ -239,7 +240,7 @@ func PlansDetailsHandler(cfg *config.Config, ps *services.PlanService) bot.Handl
 	}
 }
 
-func PlansDeleteHandler(cfg *config.Config, ps *services.PlanService) bot.HandlerFunc {
+func PlansDeleteHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 			CallbackQueryID: upd.CallbackQuery.ID,
@@ -255,7 +256,7 @@ func PlansDeleteHandler(cfg *config.Config, ps *services.PlanService) bot.Handle
 			log.Print("failed to get planID from callback data: %w", err)
 		}
 
-		if err := ps.Delete(planID); err != nil {
+		if err := appCtx.PlanService.Delete(planID); err != nil {
 			// todo add error handler
 			log.Print("failed to get plan from DB: %w", err)
 		}
@@ -269,25 +270,25 @@ func PlansDeleteHandler(cfg *config.Config, ps *services.PlanService) bot.Handle
 	}
 }
 
-func PlansListHandler(cfg *config.Config, sm *services.SessionManager, ps *services.PlanService) bot.HandlerFunc {
+func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
-        var callbackMsgID int
-        var chatID int64
+		var callbackMsgID int
+		var chatID int64
 
-        if upd.Message != nil {
-            chatID = upd.Message.Chat.ID
-        } else {
-            b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
-                CallbackQueryID: upd.CallbackQuery.ID,
-                ShowAlert:       false,
-            })
-            chatID = upd.CallbackQuery.Message.Message.Chat.ID
-            callbackMsgID = upd.CallbackQuery.Message.Message.ID
-        }
+		if upd.Message != nil {
+			chatID = upd.Message.Chat.ID
+		} else {
+			b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+				CallbackQueryID: upd.CallbackQuery.ID,
+				ShowAlert:       false,
+			})
+			chatID = upd.CallbackQuery.Message.Message.Chat.ID
+			callbackMsgID = upd.CallbackQuery.Message.Message.ID
+		}
 
-		sess := sm.Get(chatID)
+		sess := appCtx.SessionManager.Get(chatID)
 		sess.State = services.StateMenu
-		plans, _ := ps.List(chatID, cfg)
+		plans, _ := appCtx.PlanService.List(chatID, appCtx.Cfg)
 		if len(plans) == 0 {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "У вас нет планов"})
 			sess.State = services.StateMenu
@@ -298,14 +299,14 @@ func PlansListHandler(cfg *config.Config, sm *services.SessionManager, ps *servi
 		for i, p := range plans {
 			lines = append(lines,
 				fmt.Sprintf("%d) %s (%s)",
-					i + 1,
+					i+1,
 					p.Description,
 					p.EventTime.Format(config.DTLayout), // или любой ваш формат
 				),
 			)
 		}
 		msgText := strings.Join(lines, "\n") + "\n\nВыбери план для подробностей:"
-        kb := keyboards.PlansListInlineKeyboard(plans)
+		kb := keyboards.PlansListInlineKeyboard(plans)
 
 		if callbackMsgID != 0 {
 			b.EditMessageText(ctx, &bot.EditMessageTextParams{
@@ -315,11 +316,11 @@ func PlansListHandler(cfg *config.Config, sm *services.SessionManager, ps *servi
 				ReplyMarkup: kb,
 			})
 		} else {
-            b.SendMessage(ctx, &bot.SendMessageParams{
-                ChatID:      chatID,
-                Text:        msgText,
-                ReplyMarkup: kb,
-            })
-        }
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID:      chatID,
+				Text:        msgText,
+				ReplyMarkup: kb,
+			})
+		}
 	}
 }

@@ -3,46 +3,25 @@ package bot
 import (
 	"log"
 
-	"github.com/Petryanin/love-bot/internal/clients"
+	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/Petryanin/love-bot/internal/config"
 	"github.com/Petryanin/love-bot/internal/handlers"
-	"github.com/Petryanin/love-bot/internal/services"
 	"github.com/go-telegram/bot"
 )
 
-func CreateBot(cfg *config.Config) *bot.Bot {
+func CreateBot(appCtx *app.AppContext) *bot.Bot {
 	log.Print("creating bot...")
-	b, err := bot.New(cfg.TgToken)
+	b, err := bot.New(appCtx.Cfg.TgToken)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	registerHandlers(cfg, b)
+	registerHandlers(appCtx, b)
 
 	return b
 }
 
-func registerHandlers(cfg *config.Config, b *bot.Bot) {
-	log.Print("initializing services...")
-	weatherService := services.NewWeatherService(
-		clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey),
-		cfg.WeatherAPICity,
-	)
-	relationshipService := services.NewRelationshipService(
-		cfg.DatingStartDate.In(cfg.DatingStartTZ),
-	)
-	complimentService := services.NewComplimentService()
-	imgService := services.NewImageComplimentService(
-		clients.NewCatAASClient(cfg.CatAPIURL),
-		cfg.FontPath,
-	)
-
-	planService, err := services.NewPlanService(cfg.DBPath, 369618248)
-	if err != nil {
-		panic(err)
-	}
-	sessionManager := services.NewSessionManager()
-
+func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
 	log.Print("registering handlers...")
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
@@ -60,42 +39,42 @@ func registerHandlers(cfg *config.Config, b *bot.Bot) {
 		bot.HandlerTypeMessageText,
 		config.WeatherButton,
 		bot.MatchTypeExact,
-		handlers.WeatherHandler(weatherService),
+		handlers.WeatherHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		config.TogetherTimeButton,
 		bot.MatchTypeExact,
-		handlers.TogetherTimeHandler(relationshipService),
+		handlers.TogetherTimeHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		config.ComplimentButton,
 		bot.MatchTypeExact,
-		handlers.ComplimentImageHandler(imgService, complimentService),
+		handlers.ComplimentImageHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		"",
 		bot.MatchTypePrefix,
-		handlers.PlansHandler(cfg, sessionManager, planService),
+		handlers.PlansHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
 		"plan:",
 		bot.MatchTypePrefix,
-		handlers.PlansDetailsHandler(cfg, planService),
+		handlers.PlansDetailsHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
 		"plan_delete:",
 		bot.MatchTypePrefix,
-		handlers.PlansDeleteHandler(cfg, planService),
+		handlers.PlansDeleteHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
 		"plan_list",
 		bot.MatchTypeExact,
-		handlers.PlansListHandler(cfg, sessionManager, planService),
+		handlers.PlansListHandler(appCtx),
 	)
 }
