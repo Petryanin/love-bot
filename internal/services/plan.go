@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/Petryanin/love-bot/internal/config"
@@ -17,6 +18,7 @@ type Plan struct {
 	Description string
 	EventTime   time.Time
 	RemindTime  time.Time
+	Reminded    bool
 }
 
 type PlanService struct {
@@ -36,7 +38,8 @@ func NewPlanService(dbPath string, partnerChatID int64) *PlanService {
 			chat_id INTEGER NOT NULL,
 			description TEXT NOT NULL,
 			event_time DATETIME NOT NULL,
-			remind_time DATETIME NOT NULL
+			remind_time DATETIME NOT NULL,
+			reminded BOOLEAN NOT NULL DEFAULT FALSE
 		)`,
 	)
 	if err != nil {
@@ -113,22 +116,86 @@ func (s *PlanService) List(chatID int64, cfg *config.Config) ([]Plan, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var res []Plan
+
+	var result []Plan
 	for rows.Next() {
 		var p Plan
 		p.ChatID = chatID
-		if err := rows.Scan(&p.ID, &p.Description, &p.EventTime, &p.RemindTime); err != nil {
+		err := rows.Scan(
+			&p.ID,
+			&p.Description,
+			&p.EventTime,
+			&p.RemindTime,
+		)
+		if err != nil {
 			log.Print("error iterating over rows: %w", err)
 			return nil, err
 		}
 		p.EventTime = p.EventTime.In(cfg.DefaultTZ)
 		p.RemindTime = p.RemindTime.In(cfg.DefaultTZ)
-		res = append(res, p)
+		result = append(result, p)
 	}
-	return res, nil
+	return result, nil
 }
 
 func (s *PlanService) Delete(id int64) error {
 	_, err := s.db.Exec(`DELETE FROM plan WHERE id = ?`, id)
 	return err
+}
+
+func (s *PlanService) GetDueAndMark(now time.Time) ([]Plan, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query(`
+        SELECT id, chat_id, description, event_time, remind_time
+        FROM plan
+        WHERE remind_time <= ? AND reminded = 0
+	`, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var duePlans []Plan
+	for rows.Next() {
+		var p Plan
+		if err := rows.Scan(
+			&p.ID,
+			&p.ChatID,
+			&p.Description,
+			&p.EventTime,
+			&p.RemindTime,
+		); err != nil {
+			return nil, err
+		}
+		duePlans = append(duePlans, p)
+	}
+
+	if len(duePlans) == 0 {
+		return duePlans, tx.Commit()
+	}
+
+	placeholders := strings.TrimRight(strings.Repeat("?,", len(duePlans)), ",")
+	args := make([]any, len(duePlans)+1)
+	for i, p := range duePlans {
+		args[i] = p.ID
+	}
+
+	_, err = tx.Exec(fmt.Sprintf(`
+        UPDATE plan
+        SET reminded = TRUE
+        WHERE id IN (%s)
+    `, placeholders), args...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return duePlans, nil
 }

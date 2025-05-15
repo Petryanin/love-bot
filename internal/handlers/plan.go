@@ -197,7 +197,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: appCtx.PlanService.PartnersChatIDs,
 				Text: fmt.Sprintf(
-					"Твоя любимка создала новый план: %s на %s",
+					"Твоя Вкущуща создала новый план: %s на %s",
 					p.Description,
 					appCtx.DateTimeService.FormatDateRu(p.EventTime)),
 			})

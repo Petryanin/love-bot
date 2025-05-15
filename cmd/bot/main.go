@@ -5,11 +5,13 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/Petryanin/love-bot/internal/bot"
 	"github.com/Petryanin/love-bot/internal/clients"
 	"github.com/Petryanin/love-bot/internal/config"
+	"github.com/Petryanin/love-bot/internal/scheduler"
 	"github.com/Petryanin/love-bot/internal/services"
 )
 
@@ -31,10 +33,12 @@ func main() {
 		PlanService:            services.NewPlanService(cfg.DBPath, cfg.TgPartnerCharID),
 		SessionManager:         services.NewSessionManager(),
 		WeatherService:         services.NewWeatherService(clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey), cfg.WeatherAPICity),
-		DateTimeService:         services.NewDateTimeService(clients.NewDucklingClient(cfg.DucklingAPIURL, cfg.DucklingLocale, cfg.DucklingTZ),),
+		DateTimeService:        services.NewDateTimeService(clients.NewDucklingClient(cfg.DucklingAPIURL, cfg.DucklingLocale, cfg.DucklingTZ)),
 	}
 
 	bot := bot.CreateBot(appCtx)
+
+	scheduler.StartPlanScheduler(ctx, bot, appCtx, time.Minute)
 
 	log.Print("starting bot...")
 	bot.Start(ctx)
