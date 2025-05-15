@@ -10,16 +10,16 @@ import (
 )
 
 func PlansListInlineKeyboard(plans []services.Plan) *models.InlineKeyboardMarkup {
-	rows := make([][]models.InlineKeyboardButton, len(plans))
+	buttons := make([]models.InlineKeyboardButton, len(plans))
 	for i, p := range plans {
-		rows[i] = []models.InlineKeyboardButton{
-			{
-				Text:         strconv.Itoa(i + 1),
-				CallbackData: fmt.Sprintf("plan:%d", p.ID),
-			},
+		buttons[i] = models.InlineKeyboardButton{
+			Text:         strconv.Itoa(i + 1),
+			CallbackData: fmt.Sprintf("plan:%d", p.ID),
 		}
 	}
-	return &models.InlineKeyboardMarkup{InlineKeyboard: rows}
+	return &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{buttons},
+	}
 }
 
 func PlansDetailInlineKeyboard(plan *services.Plan) *models.InlineKeyboardMarkup {
