@@ -18,8 +18,9 @@
 go.work
 go.work.sum
 
-# env file
-.env
+# env files
+*.env
+!default.env
 
 # misc
 *.db
