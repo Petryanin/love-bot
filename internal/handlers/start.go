@@ -29,8 +29,8 @@ func StartHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		"чтобы ознакомиться с моими функциями подробнее",
 	}, "")
 	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: chatID,
-		Text: welcomeText,
+		ChatID:      chatID,
+		Text:        welcomeText,
 		ParseMode:   models.ParseModeMarkdown,
 		ReplyMarkup: kb,
 	})
