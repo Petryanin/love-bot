@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-viper/mapstructure/v2"
@@ -13,9 +15,9 @@ type Config struct {
 	DefaultTZ *time.Location `mapstructure:"DEFAULT_TZ"`
 	FontPath  string         `mapstructure:"FONT_PATH"`
 
-	TgToken         string `mapstructure:"TG_TOKEN"`
-	TgDebug         bool   `mapstructure:"TG_DEBUG"`
-	TgPartnerCharID int64  `mapstructure:"TG_PARTNER_CHAT_ID"`
+	TgToken           string  `mapstructure:"TG_TOKEN"`
+	TgDebug           bool    `mapstructure:"TG_DEBUG"`
+	TgPartnersChatIDs []int64 `mapstructure:"TG_PARTNERS_CHAT_IDS"`
 
 	DBPath string `mapstructure:"DB_PATH"`
 
@@ -45,6 +47,7 @@ func Load(path string) (*Config, error) {
 	decodeHook := mapstructure.ComposeDecodeHookFunc(
 		stringToTimeHook,
 		stringToLocationHook,
+		stringToInt64SliceHook,
 	)
 
 	var cfg Config
@@ -78,6 +81,33 @@ func stringToLocationHook(f reflect.Type, t reflect.Type, data any) (any, error)
 			return nil, fmt.Errorf("invalid timezone %q: %w", name, err)
 		}
 		return loc, nil
+	}
+	return data, nil
+}
+
+func stringToInt64SliceHook(f reflect.Type, t reflect.Type, data any) (any, error) {
+	if f.Kind() == reflect.String &&
+		t.Kind() == reflect.Slice &&
+		t.Elem().Kind() == reflect.Int64 {
+
+		str := data.(string)
+		if str == "" {
+			return []int64{}, nil
+		}
+
+		parts := strings.Split(str, ",")
+		out := make([]int64, 0, len(parts))
+
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			number, err := strconv.ParseInt(p, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid int: %q: %w", p, err)
+			}
+
+			out = append(out, number)
+		}
+		return out, nil
 	}
 	return data, nil
 }

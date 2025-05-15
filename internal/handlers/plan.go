@@ -191,16 +191,20 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "😥Ошибка при сохранении"})
 		} else {
 			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: chatID, Text: "✅План сохранён!",
+				ChatID:      chatID,
+				Text:        "✅План сохранён!",
 				ReplyMarkup: keyboards.PlanMenuKeyboard(),
 			})
-			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: appCtx.PlanService.PartnersChatIDs,
-				Text: fmt.Sprintf(
-					"Твоя Вкущуща создала новый план: %s на %s",
-					p.Description,
-					appCtx.DateTimeService.FormatDateRu(p.EventTime)),
-			})
+
+			for _, id := range appCtx.PlanService.PartnersChatIDs {
+				b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID: id,
+					Text: fmt.Sprintf(
+						"Твоя Вкущуща создала новый план: %s на %s",
+						p.Description,
+						appCtx.DateTimeService.FormatDateRu(p.EventTime)),
+				})
+			}
 		}
 		sess.State = services.StateMenu
 	}
