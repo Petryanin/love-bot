@@ -154,7 +154,7 @@ func (s *PlanService) GetDueAndMark(now time.Time) ([]Plan, error) {
         SELECT id, chat_id, description, event_time, remind_time
         FROM plan
         WHERE remind_time <= ? AND reminded = 0
-	`, now)
+	`, now.UTC())
 	if err != nil {
 		return nil, err
 	}

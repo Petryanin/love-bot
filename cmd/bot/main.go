@@ -38,7 +38,8 @@ func main() {
 
 	bot := bot.CreateBot(appCtx)
 
-	scheduler.StartPlanScheduler(ctx, bot, appCtx, time.Minute)
+	log.Print("starting plan scheduler...")
+	scheduler.StartPlanScheduler(ctx, bot, appCtx, time.Second*5)
 
 	log.Print("starting bot...")
 	bot.Start(ctx)
