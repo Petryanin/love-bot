@@ -295,10 +295,16 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 
 		sess := appCtx.SessionManager.Get(chatID)
 		sess.State = services.StateMenu
-		plans, _ := appCtx.PlanService.List(chatID, appCtx.Cfg)
+
+		if upd.CallbackQuery != nil && strings.HasPrefix(upd.CallbackQuery.Data, "plans:page:") {
+			fmt.Sscanf(upd.CallbackQuery.Data, "plans:page:%d", &sess.TempPage)
+		} else {
+			sess.TempPage = 0
+		}
+
+		plans, hasPrev, hasNext, _ := appCtx.PlanService.List(chatID, sess.TempPage, config.NavPageSize, appCtx.Cfg)
 		if len(plans) == 0 {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "У вас нет планов"})
-			sess.State = services.StateMenu
 			return
 		}
 
@@ -312,8 +318,9 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				),
 			)
 		}
+
 		msgText := strings.Join(lines, "\n") + "\n\nВыбери план для подробностей:"
-		kb := keyboards.PlansListInlineKeyboard(plans)
+		kb := keyboards.PlansListInlineKeyboard(plans, sess.TempPage, config.NavPageSize, hasPrev, hasNext)
 
 		if callbackMsgID != 0 {
 			b.EditMessageText(ctx, &bot.EditMessageTextParams{

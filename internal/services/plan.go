@@ -97,23 +97,25 @@ func (s *PlanService) GetByID(id int64, cfg *config.Config) (*Plan, error) {
 	return &p, nil
 }
 
-func (s *PlanService) List(chatID int64, cfg *config.Config) ([]Plan, error) {
-	rows, err := s.db.Query(
-		`SELECT
-			id,
-			description,
-			event_time,
-			remind_time
-        FROM
-			plan
-		WHERE
-			chat_id = ?
-		ORDER BY id ASC`,
-		chatID,
+func (s *PlanService) List(
+	chatID int64,
+	pageNumber, pageSize int,
+	cfg *config.Config,
+) (plans []Plan, hasPrev, hasNext bool, err error) {
+	offset := pageNumber * pageSize
+	limit := pageSize + 1
+
+	rows, err := s.db.Query(`
+        SELECT id, description, event_time, remind_time
+        FROM plan
+        WHERE chat_id = ?
+        ORDER BY id ASC
+        LIMIT ? OFFSET ?`,
+		chatID, limit, offset,
 	)
 	if err != nil {
 		log.Print("error executing query: %w", err)
-		return nil, err
+		return nil, false, false, err
 	}
 	defer rows.Close()
 
@@ -121,6 +123,7 @@ func (s *PlanService) List(chatID int64, cfg *config.Config) ([]Plan, error) {
 	for rows.Next() {
 		var p Plan
 		p.ChatID = chatID
+
 		err := rows.Scan(
 			&p.ID,
 			&p.Description,
@@ -128,14 +131,23 @@ func (s *PlanService) List(chatID int64, cfg *config.Config) ([]Plan, error) {
 			&p.RemindTime,
 		)
 		if err != nil {
-			log.Print("error iterating over rows: %w", err)
-			return nil, err
+			log.Print("error scanning row: %w", err)
+			return nil, false, false, err
 		}
+
 		p.EventTime = p.EventTime.In(cfg.DefaultTZ)
 		p.RemindTime = p.RemindTime.In(cfg.DefaultTZ)
 		result = append(result, p)
 	}
-	return result, nil
+
+	if len(result) > pageSize {
+		hasNext = true
+		result = result[:pageSize]
+	}
+
+	hasPrev = pageNumber > 0
+
+	return result, hasPrev, hasNext, nil
 }
 
 func (s *PlanService) Delete(id int64) error {

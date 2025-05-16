@@ -16,6 +16,7 @@ type Session struct {
 	TempDesc   string
 	TempEvent  time.Time
 	TempRemind time.Time
+	TempPage   int
 }
 
 type SessionManager struct {

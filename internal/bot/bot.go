@@ -73,8 +73,8 @@ func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
-		"plan_list",
-		bot.MatchTypeExact,
+		"plans",
+		bot.MatchTypePrefix,
 		handlers.PlansListHandler(appCtx),
 	)
 }

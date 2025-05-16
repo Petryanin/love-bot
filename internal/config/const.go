@@ -18,5 +18,6 @@ const (
 	StartCommand = "start"
 	HelpCommand  = "help"
 
-	DTLayout = "02-01-2006 15:04"
+	DTLayout    = "02-01-2006 15:04"
+	NavPageSize = 7
 )
