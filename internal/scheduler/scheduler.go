@@ -30,7 +30,7 @@ func StartPlanScheduler(
 				text := fmt.Sprintf(
 					"📢Напоминание: %s (%s)",
 					p.Description,
-					appCtx.DateTimeService.FormatDateRu(p.EventTime),
+					appCtx.DateTimeService.FormatDateRu(p.EventTime.In(appCtx.Cfg.DefaultTZ)),
 				)
 				b.SendMessage(context.Background(), &bot.SendMessageParams{
 					ChatID: p.ChatID,
