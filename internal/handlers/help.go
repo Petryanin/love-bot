@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/Petryanin/love-bot/internal/config"
@@ -30,9 +29,10 @@ func HelpHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		"/help — показать это сообщение",
 		"",
 		"*Кнопки:*",
-		fmt.Sprintf("\"%s\"", config.WeatherBtn) + " — краткая сводка текущей погоды",
-		fmt.Sprintf("\"%s\"", config.TogetherTimeBtn) + " — время ваших отношений",
-		fmt.Sprintf("\"%s\"", strings.Replace(config.ComplimentBtn, "-", "\\-", -1)) + " — картинка с котом и комплиментом",
+		"\"" + config.WeatherBtn + "\" — краткая сводка текущей погоды",
+		"\"" + strings.Replace(config.ComplimentBtn, "-", "\\-", -1) + "\" — картинка с котом и комплиментом",
+		"\"" + config.PlansBtn + "\" — меню планов и напоминаний",
+		"\"" + config.TogetherTimeBtn + "\" — время ваших отношений",
 	}, "\n")
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:    chatID,
