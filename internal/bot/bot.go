@@ -25,31 +25,31 @@ func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
 	log.Print("registering handlers...")
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
-		config.StartCommand,
+		config.StartCmd,
 		bot.MatchTypeCommand,
 		handlers.StartHandler,
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
-		config.HelpCommand,
+		config.HelpCmd,
 		bot.MatchTypeCommand,
 		handlers.HelpHandler,
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
-		config.WeatherButton,
+		config.WeatherBtn,
 		bot.MatchTypeExact,
 		handlers.WeatherHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
-		config.TogetherTimeButton,
+		config.TogetherTimeBtn,
 		bot.MatchTypeExact,
 		handlers.TogetherTimeHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
-		config.ComplimentButton,
+		config.ComplimentBtn,
 		bot.MatchTypeExact,
 		handlers.ComplimentImageHandler(appCtx),
 	)
@@ -76,5 +76,17 @@ func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
 		"plans",
 		bot.MatchTypePrefix,
 		handlers.PlansListHandler(appCtx),
+	)
+	b.RegisterHandler(
+		bot.HandlerTypeCallbackQueryData,
+		"remind:change:",
+		bot.MatchTypePrefix,
+		handlers.PlansChangeRemindTimeHandler(appCtx),
+	)
+	b.RegisterHandler(
+		bot.HandlerTypeCallbackQueryData,
+		"remind:",
+		bot.MatchTypePrefix,
+		handlers.PlansRemindHandler(nil, appCtx),
 	)
 }

@@ -30,9 +30,9 @@ func HelpHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		"/help — показать это сообщение",
 		"",
 		"*Кнопки:*",
-		fmt.Sprintf("\"%s\"", config.WeatherButton) + " — краткая сводка текущей погоды",
-		fmt.Sprintf("\"%s\"", config.TogetherTimeButton) + " — время ваших отношений",
-		fmt.Sprintf("\"%s\"", strings.Replace(config.ComplimentButton, "-", "\\-", -1)) + " — картинка с котом и комплиментом",
+		fmt.Sprintf("\"%s\"", config.WeatherBtn) + " — краткая сводка текущей погоды",
+		fmt.Sprintf("\"%s\"", config.TogetherTimeBtn) + " — время ваших отношений",
+		fmt.Sprintf("\"%s\"", strings.Replace(config.ComplimentBtn, "-", "\\-", -1)) + " — картинка с котом и комплиментом",
 	}, "\n")
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:    chatID,

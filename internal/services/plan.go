@@ -13,7 +13,7 @@ import (
 )
 
 type Plan struct {
-	ID          int
+	ID          int64
 	ChatID      int64
 	Description string
 	EventTime   time.Time
@@ -99,11 +99,11 @@ func (s *PlanService) GetByID(id int64, cfg *config.Config) (*Plan, error) {
 
 func (s *PlanService) List(
 	chatID int64,
-	pageNumber, pageSize int,
+	pageNumber int,
 	cfg *config.Config,
 ) (plans []Plan, hasPrev, hasNext bool, err error) {
-	offset := pageNumber * pageSize
-	limit := pageSize + 1
+	offset := pageNumber * config.NavPageSize
+	limit := config.NavPageSize + 1
 
 	rows, err := s.db.Query(`
         SELECT id, description, event_time, remind_time
@@ -140,9 +140,9 @@ func (s *PlanService) List(
 		result = append(result, p)
 	}
 
-	if len(result) > pageSize {
+	if len(result) > config.NavPageSize {
 		hasNext = true
-		result = result[:pageSize]
+		result = result[:config.NavPageSize]
 	}
 
 	hasPrev = pageNumber > 0
@@ -210,4 +210,11 @@ func (s *PlanService) GetDueAndMark(now time.Time) ([]Plan, error) {
 		return nil, err
 	}
 	return duePlans, nil
+}
+
+func (s *PlanService) Schedule(id int64, t time.Time) error {
+	_, err := s.db.Exec(`
+		UPDATE plan SET remind_time = ?, reminded = FALSE WHERE id = ?`, t, id,
+	)
+	return err
 }

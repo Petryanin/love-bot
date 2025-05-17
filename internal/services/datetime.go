@@ -62,8 +62,7 @@ func (s *DateTimeService) ParseDateTime(text string, ref time.Time) (time.Time, 
 		}
 	}
 
-	log.Printf("dt service: failed to parse datetime %q", text)
-	return time.Time{}, err
+	return time.Time{}, fmt.Errorf("dt service: failed to parse datetime %q", text)
 }
 
 // FormatDateRu возвращает строку вида:

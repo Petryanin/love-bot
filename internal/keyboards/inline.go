@@ -11,12 +11,12 @@ import (
 
 func PlansListInlineKeyboard(
 	plans []services.Plan,
-	pageNumber, pageSize int,
+	pageNumber int,
 	hasPrev, hasNext bool,
 ) *models.InlineKeyboardMarkup {
 	buttons := make([]models.InlineKeyboardButton, len(plans))
 	for i, p := range plans {
-		idx := pageNumber*pageSize + i + 1
+		idx := pageNumber*config.NavPageSize + i + 1
 		buttons[i] = models.InlineKeyboardButton{
 			Text:         strconv.Itoa(idx),
 			CallbackData: fmt.Sprintf("plan:%d", p.ID),
@@ -26,13 +26,13 @@ func PlansListInlineKeyboard(
 	nav := make([]models.InlineKeyboardButton, 0, 2)
 	if hasPrev {
 		nav = append(nav, models.InlineKeyboardButton{
-			Text:         "<< Назад",
+			Text:         config.BackArrowInlineBtn,
 			CallbackData: fmt.Sprintf("plans:page:%d", pageNumber-1),
 		})
 	}
 	if hasNext {
 		nav = append(nav, models.InlineKeyboardButton{
-			Text:         "Вперед >>",
+			Text:         config.ForwardArrowInlineBtn,
 			CallbackData: fmt.Sprintf("plans:page:%d", pageNumber+1),
 		})
 	}
@@ -44,25 +44,86 @@ func PlansListInlineKeyboard(
 	return &models.InlineKeyboardMarkup{InlineKeyboard: keyboard}
 }
 
-func PlansDetailInlineKeyboard(plan *services.Plan) *models.InlineKeyboardMarkup {
-	return &models.InlineKeyboardMarkup{
-		InlineKeyboard: [][]models.InlineKeyboardButton{
-			{
-				{Text: config.DeleteButton, CallbackData: fmt.Sprintf("plan_delete:%d", plan.ID)},
-			},
-			{
-				{Text: config.ReturnToListButton, CallbackData: "plans"},
-			},
-		},
+func PlansDetailInlineKeyboard(plan *services.Plan, isRemindMenu bool) *models.InlineKeyboardMarkup {
+	buttons := make([]models.InlineKeyboardButton, 0, 2)
+	buttons = append(buttons, models.InlineKeyboardButton{
+		Text:         config.DeleteInlineBtn,
+		CallbackData: fmt.Sprintf("plan_delete:%d", plan.ID),
+	})
+
+	if isRemindMenu {
+		buttons = append(buttons, models.InlineKeyboardButton{
+			Text:         config.BackInlineBtn,
+			CallbackData: fmt.Sprintf("remind:%d", plan.ID),
+		})
+	} else {
+		buttons = append(buttons, models.InlineKeyboardButton{
+			Text:         config.ToListInlineBtn,
+			CallbackData: "plans",
+		})
 	}
+	keyboard := [][]models.InlineKeyboardButton{buttons}
+	return &models.InlineKeyboardMarkup{InlineKeyboard: keyboard}
 }
 
 func PlansDeletedInlineKeyboard() *models.InlineKeyboardMarkup {
 	return &models.InlineKeyboardMarkup{
 		InlineKeyboard: [][]models.InlineKeyboardButton{
 			{
-				{Text: config.ReturnToListButton, CallbackData: "plans"},
+				{Text: config.ToListInlineBtn, CallbackData: "plans"},
 			},
 		},
+	}
+}
+
+func PlansReminderKeyboard(planID int64) *models.InlineKeyboardMarkup {
+	deltas := []struct {
+		Label string
+		Min   int
+	}{
+		{"15м", 15},
+		{"30м", 30},
+		{"1ч", 60},
+		{"3ч", 180},
+		{"1д", 1440},
+	}
+	row1 := make([]models.InlineKeyboardButton, len(deltas))
+	for i, d := range deltas {
+		row1[i] = models.InlineKeyboardButton{
+			Text:         d.Label,
+			CallbackData: fmt.Sprintf("remind:change:%d:%d", planID, d.Min),
+		}
+	}
+
+	row2 := []models.InlineKeyboardButton{
+		{
+			Text:         config.InputTimeInlineBtn,
+			CallbackData: fmt.Sprintf("remind:change:%d:custom", planID),
+		},
+		{
+			Text:         config.OpenInlineBtn,
+			CallbackData: fmt.Sprintf("plan:%d:remind", planID),
+		},
+	}
+
+	return &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{
+			row1, row2,
+		},
+	}
+}
+
+func PlansOpenReminderKeyboard(planID int64) *models.InlineKeyboardMarkup {
+	return &models.InlineKeyboardMarkup{
+		InlineKeyboard: [][]models.InlineKeyboardButton{{
+			{
+				Text:         config.OpenInlineBtn,
+				CallbackData: fmt.Sprintf("plan:%d:remind", planID),
+			},
+			{
+				Text:         config.BackInlineBtn,
+				CallbackData: fmt.Sprintf("remind:%d", planID),
+			},
+		}},
 	}
 }

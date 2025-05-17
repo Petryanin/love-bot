@@ -2,11 +2,11 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
 	"github.com/Petryanin/love-bot/internal/app"
+	"github.com/Petryanin/love-bot/internal/handlers"
 	"github.com/go-telegram/bot"
 )
 
@@ -27,15 +27,7 @@ func StartPlanScheduler(
 				continue
 			}
 			for _, p := range duePlans {
-				text := fmt.Sprintf(
-					"📢Напоминание: %s (%s)",
-					p.Description,
-					appCtx.DateTimeService.FormatDateRu(p.EventTime.In(appCtx.Cfg.DefaultTZ)),
-				)
-				b.SendMessage(context.Background(), &bot.SendMessageParams{
-					ChatID: p.ChatID,
-					Text:   text,
-				})
+				handlers.PlansRemindHandler(&p, appCtx)(ctx, b, nil)
 			}
 		}
 	}()

@@ -11,12 +11,12 @@ func BaseReplyKeyboard() *models.ReplyKeyboardMarkup {
 	return &models.ReplyKeyboardMarkup{
 		Keyboard: [][]models.KeyboardButton{
 			{
-				{Text: config.WeatherButton},
-				{Text: config.ComplimentButton},
-				{Text: config.PlansButton},
+				{Text: config.WeatherBtn},
+				{Text: config.ComplimentBtn},
+				{Text: config.PlansBtn},
 			},
 			{
-				{Text: config.TogetherTimeButton},
+				{Text: config.TogetherTimeBtn},
 			},
 		},
 		ResizeKeyboard:  true,
@@ -28,11 +28,11 @@ func PlanMenuKeyboard() *models.ReplyKeyboardMarkup {
 	return &models.ReplyKeyboardMarkup{
 		Keyboard: [][]models.KeyboardButton{
 			{
-				{Text: config.AddButton},
-				{Text: config.ListButton},
+				{Text: config.AddBtn},
+				{Text: config.ListBtn},
 			},
 			{
-				{Text: config.BackButton},
+				{Text: config.BackBtn},
 			},
 		},
 		ResizeKeyboard: true,
@@ -43,10 +43,11 @@ func PlanMenuCancelKeyboard() *models.ReplyKeyboardMarkup {
 	return &models.ReplyKeyboardMarkup{
 		Keyboard: [][]models.KeyboardButton{
 			{
-				{Text: config.CancelButton},
+				{Text: config.CancelBtn},
 			},
 		},
-		ResizeKeyboard: true,
+		ResizeKeyboard:  true,
+		OneTimeKeyboard: true,
 	}
 }
 
@@ -54,10 +55,10 @@ func PlanMenuRemindKeyboard() *models.ReplyKeyboardMarkup {
 	return &models.ReplyKeyboardMarkup{
 		Keyboard: [][]models.KeyboardButton{
 			{
-				{Text: config.SameTimeButton},
+				{Text: config.SameTimeBtn},
 			},
 			{
-				{Text: config.CancelButton},
+				{Text: config.CancelBtn},
 			},
 		},
 		ResizeKeyboard: true,

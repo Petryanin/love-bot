@@ -1,22 +1,28 @@
 package config
 
 const (
-	WeatherButton      = "🌤Погода"
-	ComplimentButton   = "😻Кото-мплимент"
-	TogetherTimeButton = "♥️Сколько мы вместе?"
+	WeatherBtn      = "🌤Погода"
+	ComplimentBtn   = "😻Кото-мплимент"
+	TogetherTimeBtn = "♥️Сколько мы вместе?"
 
-	PlansButton        = "📆Планы"
-	ListButton         = "📄Список"
-	AddButton          = "➕Добавить"
-	BackButton         = "⬅️Назад"
-	CancelButton       = "🚫Отмена"
-	SameTimeButton     = "🎯В то же время"
-	NoteButton         = "📝Заметка"
-	DeleteButton       = "Удалить"
-	ReturnToListButton = "Вернуться к списку"
+	PlansBtn    = "📆Планы"
+	ListBtn     = "📄Список"
+	AddBtn      = "➕Добавить"
+	BackBtn     = "⬅️Назад"
+	CancelBtn   = "🚫Отмена"
+	SameTimeBtn = "🎯В то же время"
+	NoteBtn     = "📝Заметка"
 
-	StartCommand = "start"
-	HelpCommand  = "help"
+	DeleteInlineBtn       = "Удалить"
+	ToListInlineBtn       = "К списку"
+	BackInlineBtn         = "Назад"
+	BackArrowInlineBtn    = "<< Назад"
+	ForwardArrowInlineBtn = "Вперед >>"
+	OpenInlineBtn         = "Открыть"
+	InputTimeInlineBtn    = "Введите время"
+
+	StartCmd = "start"
+	HelpCmd  = "help"
 
 	DTLayout    = "02-01-2006 15:04"
 	NavPageSize = 7
