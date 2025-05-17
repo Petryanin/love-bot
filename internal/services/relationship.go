@@ -37,13 +37,13 @@ func buildDurationString(prefix string, years, months, days int) string {
 	parts := []string{}
 
 	if years > 0 {
-		parts = append(parts, fmt.Sprintf("%d %s", years, plural(years, "год", "года", "лет")))
+		parts = append(parts, fmt.Sprintf("%d %s", years, Pluralize(years, "год", "года", "лет")))
 	}
 	if months > 0 {
-		parts = append(parts, fmt.Sprintf("%d %s", months, plural(months, "месяц", "месяца", "месяцев")))
+		parts = append(parts, fmt.Sprintf("%d %s", months, Pluralize(months, "месяц", "месяца", "месяцев")))
 	}
 	if days > 0 {
-		parts = append(parts, fmt.Sprintf("%d %s", days, plural(days, "день", "дня", "дней")))
+		parts = append(parts, fmt.Sprintf("%d %s", days, Pluralize(days, "день", "дня", "дней")))
 	}
 	// Если ничего не добавилось — хотя бы вывести "0 дней"
 	if len(parts) == 0 {
@@ -107,20 +107,4 @@ func daysIn(t time.Time) int {
 	// первый день следующего месяца
 	firstNext := time.Date(y, m+1, 1, 0, 0, 0, 0, t.Location())
 	return int(firstNext.Add(-time.Nanosecond).Day())
-}
-
-// plural подбирает форму слова в зависимости от числа (для русских окончаний)
-func plural(n int, one, few, many string) string {
-	nAbs := n % 100
-	if nAbs >= 11 && nAbs <= 14 {
-		return many
-	}
-	switch n % 10 {
-	case 1:
-		return one
-	case 2, 3, 4:
-		return few
-	default:
-		return many
-	}
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/Petryanin/love-bot/internal/config"
 	"github.com/Petryanin/love-bot/internal/handlers"
+	"github.com/Petryanin/love-bot/internal/services"
 	"github.com/go-telegram/bot"
 )
 
@@ -27,7 +28,7 @@ func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
 		bot.HandlerTypeMessageText,
 		config.StartCmd,
 		bot.MatchTypeCommand,
-		handlers.StartHandler,
+		handlers.StartHandler(services.CountCodeLines(".")),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
