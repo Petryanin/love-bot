@@ -1,8 +1,7 @@
 package services
 
 import (
-	"math/rand"
-	"time"
+	"math/rand/v2"
 )
 
 // ComplimentService хранит слайс комплиментов
@@ -98,7 +97,6 @@ func NewComplimentService() *ComplimentService {
 // Random возвращает случайный комплимент
 func (s *ComplimentService) Random() string {
 	// инициализируем сид, чтобы каждый раз был разный порядок
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	idx := r.Intn(len(s.compliments))
+	idx := rand.IntN(len(s.compliments))
 	return s.compliments[idx]
 }

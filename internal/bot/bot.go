@@ -56,6 +56,12 @@ func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
+		config.MagicBallBtn,
+		bot.MatchTypeExact,
+		handlers.MagicBallHandler(appCtx),
+	)
+	b.RegisterHandler(
+		bot.HandlerTypeMessageText,
 		"",
 		bot.MatchTypePrefix,
 		handlers.PlansHandler(appCtx),

@@ -17,6 +17,7 @@ func BaseReplyKeyboard() *models.ReplyKeyboardMarkup {
 			},
 			{
 				{Text: config.TogetherTimeBtn},
+				{Text: config.MagicBallBtn},
 			},
 		},
 		ResizeKeyboard:  true,

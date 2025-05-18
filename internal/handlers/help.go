@@ -33,6 +33,7 @@ func HelpHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		"\"" + strings.Replace(config.ComplimentBtn, "-", "\\-", -1) + "\" — картинка с котом и комплиментом",
 		"\"" + config.PlansBtn + "\" — меню планов и напоминаний",
 		"\"" + config.TogetherTimeBtn + "\" — время ваших отношений",
+		"\"" + config.MagicBallBtn + "\" — поможет тебе принять решение",
 	}, "\n")
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:    chatID,

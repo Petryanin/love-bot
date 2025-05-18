@@ -16,4 +16,5 @@ type AppContext struct {
 	SessionManager         *services.SessionManager
 	WeatherService         *services.WeatherService
 	DateTimeService        *services.DateTimeService
+	MagicBallService       *services.MagicBallService
 }
