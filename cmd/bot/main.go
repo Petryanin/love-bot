@@ -34,7 +34,7 @@ func main() {
 		SessionManager:         services.NewSessionManager(),
 		WeatherService:         services.NewWeatherService(clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey), cfg.WeatherAPICity),
 		DateTimeService:        services.NewDateTimeService(clients.NewDucklingClient(cfg.DucklingAPIURL, cfg.DucklingLocale, cfg.DucklingTZ)),
-		MagicBallService:       services.NewMagicBallService(),
+		MagicBallService:       services.NewMagicBallService(cfg.MagicBallImagesPath),
 	}
 
 	bot := bot.CreateBot(appCtx)

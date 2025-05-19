@@ -33,6 +33,8 @@ type Config struct {
 	DucklingAPIURL string `mapstructure:"DUCKLING_API_URL"`
 	DucklingTZ     string `mapstructure:"DUCKLING_TZ"`
 	DucklingLocale string `mapstructure:"DUCKLING_LOCALE"`
+
+	MagicBallImagesPath string `mapstructure:"MAGIC_BALL_IMAGES_PATH"`
 }
 
 func Load(path string) (*Config, error) {
