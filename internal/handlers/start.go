@@ -25,7 +25,7 @@ func StartHandler(codeLines int) bot.HandlerFunc {
 		})
 
 		kb := keyboards.BaseReplyKeyboard()
-		linesCount := fmt.Sprintf("%d %s", codeLines, services.Pluralize(codeLines, "строка", "строки", "строк"))
+		linesCount := fmt.Sprintf("%d %s", codeLines, services.Pluralize(codeLines, "строку", "строки", "строк"))
 
 		welcomeText := strings.Join([]string{
 			"Привет\\! Я *Вкущуща* — твой романтический помощник 💌\n\n",
