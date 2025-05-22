@@ -21,10 +21,26 @@ type Plan struct {
 	Reminded    bool
 }
 
+type Planner interface {
+	Add(p *Plan) error
+	GetByID(id int64, cfg *config.Config) (*Plan, error)
+	List(
+		chatID int64,
+		pageNumber int,
+		cfg *config.Config,
+	) (plans []Plan, hasPrev, hasNext bool, err error)
+	Delete(id int64) error
+	GetDueAndMark(now time.Time) ([]Plan, error)
+	Schedule(id int64, t time.Time) error
+	PartnersChatIDs() []int64
+}
+
 type PlanService struct {
 	db              *sql.DB
-	PartnersChatIDs []int64
+	partnersChatIDs []int64
 }
+
+var _ Planner = (*PlanService)(nil)
 
 func NewPlanService(dbPath string, partnersChatIDs []int64) *PlanService {
 	db, err := sql.Open("sqlite3", dbPath)
@@ -45,7 +61,7 @@ func NewPlanService(dbPath string, partnersChatIDs []int64) *PlanService {
 	if err != nil {
 		log.Fatal("failed to create table")
 	}
-	return &PlanService{db: db, PartnersChatIDs: partnersChatIDs}
+	return &PlanService{db: db, partnersChatIDs: partnersChatIDs}
 }
 
 func (s *PlanService) Add(p *Plan) error {
@@ -217,4 +233,8 @@ func (s *PlanService) Schedule(id int64, t time.Time) error {
 		UPDATE plan SET remind_time = ?, reminded = FALSE WHERE id = ?`, t, id,
 	)
 	return err
+}
+
+func (s *PlanService) PartnersChatIDs() []int64 {
+	return s.partnersChatIDs
 }

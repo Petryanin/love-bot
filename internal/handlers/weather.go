@@ -18,7 +18,7 @@ func WeatherHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			Action: models.ChatActionTyping,
 		})
 
-		summary, err := appCtx.WeatherService.TodaySummary()
+		summary, err := appCtx.WeatherService.TodaySummary(ctx)
 		if err != nil {
 			log.Printf("failed to get weather summary: %v", err.Error())
 			summary = "Не удалось получить погоду 😕"

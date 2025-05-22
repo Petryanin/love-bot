@@ -12,7 +12,7 @@ type AppContext struct {
 	RelationshipService    *services.RelationshipService
 	ComplimentService      *services.ComplimentService
 	ImageComplimentService *services.ImageComplimentService
-	PlanService            *services.PlanService
+	PlanService            services.Planner
 	SessionManager         *services.SessionManager
 	WeatherService         *services.WeatherService
 	DateTimeService        *services.DateTimeService

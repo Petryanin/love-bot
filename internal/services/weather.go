@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"strings"
@@ -11,28 +12,26 @@ import (
 )
 
 type WeatherService struct {
-	Client *clients.OpenWeatherMapClient
-	City   string
+	client clients.WeatherFetcher
+	city   string
 }
 
-func NewWeatherService(client *clients.OpenWeatherMapClient, city string) *WeatherService {
+func NewWeatherService(client clients.WeatherFetcher, city string) *WeatherService {
 	return &WeatherService{
-		Client: client,
-		City:   city,
+		client: client,
+		city:   city,
 	}
 }
 
-func (ws *WeatherService) TodaySummary() (string, error) {
-	data, err := ws.Client.CurrentWeather(ws.City)
+func (ws *WeatherService) TodaySummary(ctx context.Context) (string, error) {
+	weather, err := ws.client.Fetch(ctx, ws.city)
 	if err != nil {
 		return "", err
 	}
 
-	// Берём первый элемент массива погодных условий
-	w := data.Weather[0]
-	emoji := weatherEmoji(w.Icon, w.Description)
-	temp := int(math.Round(data.Main.Temp))
-	feels := int(math.Round(data.Main.FeelsLike))
+	emoji := weatherEmoji(weather.Icon, weather.Description)
+	temp := int(math.Round(weather.Temp))
+	feels := int(math.Round(weather.FeelsLike))
 
 	summary := fmt.Sprintf(
 		"Сейчас в городе %s:\n\n"+
@@ -40,12 +39,12 @@ func (ws *WeatherService) TodaySummary() (string, error) {
 			"🌡️ Температура: %d°C (ощущается как %d°C)\n"+
 			"💨 Ветер: %.1f м/с\n"+
 			"💧 Влажность: %d%%",
-		data.Name,
-		emoji, cases.Title(language.Russian).String(w.Description),
+		weather.City,
+		emoji, cases.Title(language.Russian).String(weather.Description),
 		temp,
 		feels,
-		data.Wind.Speed,
-		data.Main.Humidity,
+		weather.WindSpeed,
+		weather.Humidity,
 	)
 	return summary, nil
 }

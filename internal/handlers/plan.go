@@ -132,7 +132,7 @@ func plansAddingAwaitEventTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		parsedDT, err := appCtx.DateTimeService.ParseDateTime(text, time.Now())
+		parsedDT, err := appCtx.DateTimeService.ParseDateTime(ctx, text, time.Now())
 		if err != nil {
 			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -168,7 +168,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		if text == config.SameTimeBtn {
 			remind = sess.TempEvent
 		} else {
-			parsedDT, err := appCtx.DateTimeService.ParseDateTime(text, time.Now())
+			parsedDT, err := appCtx.DateTimeService.ParseDateTime(ctx, text, time.Now())
 			if err != nil {
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё",
@@ -196,7 +196,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				ReplyMarkup: keyboards.PlanMenuKeyboard(),
 			})
 
-			for _, id := range appCtx.PlanService.PartnersChatIDs {
+			for _, id := range appCtx.PlanService.PartnersChatIDs() {
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID: id,
 					Text: fmt.Sprintf(

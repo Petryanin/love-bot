@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -24,37 +25,44 @@ type parseRequest struct {
 	Reftime int64  `json:"reftime"`
 }
 
-type DucklingClient struct {
-	*BaseClient
-	Locale  string
-	TZ      string
-	Headers map[string]string
+type DucklingParser interface {
+	Parse(ctx context.Context, text string, ref time.Time) ([]ParseResponse, error)
 }
+
+type DucklingClient struct {
+	api     Requester
+	locale  string
+	tz      string
+	headers map[string]string
+}
+
+var _ DucklingParser = (*DucklingClient)(nil)
 
 func NewDucklingClient(baseURL, locale, tz string) *DucklingClient {
 	return &DucklingClient{
-		BaseClient: NewBaseClient(baseURL),
-		Locale:     locale,
-		TZ:         tz,
-		Headers:    map[string]string{"Content-Type": "application/x-www-form-urlencoded"},
+		api:     NewBaseClient(baseURL),
+		locale:  locale,
+		tz:      tz,
+		headers: map[string]string{"Content-Type": "application/x-www-form-urlencoded"},
 	}
 }
 
-func (c *DucklingClient) Parse(text string, ref time.Time) ([]ParseResponse, error) {
+func (c *DucklingClient) Parse(ctx context.Context, text string, ref time.Time) ([]ParseResponse, error) {
 	data := url.Values{}
 	data.Set("text", text)
-	data.Set("locale", c.Locale)
-	data.Set("tz", c.TZ)
+	data.Set("locale", c.locale)
+	data.Set("tz", c.tz)
 	data.Set("reftime", strconv.FormatInt(ref.UnixMilli(), 10))
 
-	endpoint := fmt.Sprintf("%s/parse", c.BaseURL)
+	endpoint := fmt.Sprintf("%s/parse", c.api.BaseURL())
 
 	log.Printf("requesting %q", endpoint)
-	responseBody, err := c.DoRequest(
+	responseBody, err := c.api.DoRequest(
+		ctx,
 		"POST",
 		endpoint,
 		strings.NewReader(data.Encode()),
-		c.Headers,
+		c.headers,
 	)
 	if err != nil {
 		log.Print("duckling: failed to get response: %w", err)

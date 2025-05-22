@@ -1,13 +1,24 @@
 package clients
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
 )
 
-type CurrentWeatherResponse struct {
+type WeatherInfo struct {
+	City        string
+	Description string
+	Icon        string
+	Temp        float64
+	FeelsLike   float64
+	Humidity    int
+	WindSpeed   float64
+}
+
+type WeatherResponse struct {
 	Name    string `json:"name"`
 	Weather []struct {
 		Description string `json:"description"`
@@ -23,42 +34,56 @@ type CurrentWeatherResponse struct {
 	} `json:"wind"`
 }
 
-type OpenWeatherMapClient struct {
-	*BaseClient
-	APIKey string
+type WeatherFetcher interface {
+	Fetch(ctx context.Context, city string) (WeatherInfo, error)
 }
+
+type OpenWeatherMapClient struct {
+	api    Requester
+	apiKey string
+}
+
+var _ WeatherFetcher = (*OpenWeatherMapClient)(nil)
 
 func NewOpenWeatherMapClient(baseURL, apiKey string) *OpenWeatherMapClient {
 	return &OpenWeatherMapClient{
-		BaseClient: NewBaseClient(baseURL),
-		APIKey:     apiKey,
+		api:    NewBaseClient(baseURL),
+		apiKey: apiKey,
 	}
 }
 
-func (c *OpenWeatherMapClient) CurrentWeather(city string) (*CurrentWeatherResponse, error) {
-	endpoint := fmt.Sprintf("%s/weather", c.BaseURL)
+func (c *OpenWeatherMapClient) Fetch(ctx context.Context, city string) (WeatherInfo, error) {
+	endpoint := fmt.Sprintf("%s/weather", c.api.BaseURL())
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse url %q: %w", endpoint, err)
+		return WeatherInfo{}, fmt.Errorf("failed to parse url %q: %w", endpoint, err)
 	}
 
 	q := u.Query()
 	q.Set("q", city)
-	q.Set("appid", c.APIKey)
+	q.Set("appid", c.apiKey)
 	q.Set("units", "metric")
 	q.Set("lang", "ru")
 	u.RawQuery = q.Encode()
 
 	log.Printf("requesting %q", u.String())
-	responseBody, err := c.DoRequest("GET", u.String(), nil, nil)
+	responseBody, err := c.api.DoRequest(ctx, "GET", u.String(), nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to request %q: %w", u.String(), err)
+		return WeatherInfo{}, fmt.Errorf("failed to request %q: %w", u.String(), err)
 	}
 
-	var data CurrentWeatherResponse
-	if err := json.Unmarshal(responseBody, &data); err != nil {
-		return nil, fmt.Errorf("failed to decode json %+v: %w", responseBody, err)
+	var raw WeatherResponse
+	if err := json.Unmarshal(responseBody, &raw); err != nil {
+		return WeatherInfo{}, fmt.Errorf("failed to decode json %+v: %w", responseBody, err)
 	}
 
-	return &data, nil
+	return WeatherInfo{
+		City:        raw.Name,
+		Description: raw.Weather[0].Description,
+		Icon:        raw.Weather[0].Icon,
+		Temp:        raw.Main.Temp,
+		FeelsLike:   raw.Main.FeelsLike,
+		Humidity:    raw.Main.Humidity,
+		WindSpeed:   raw.Wind.Speed,
+	}, nil
 }

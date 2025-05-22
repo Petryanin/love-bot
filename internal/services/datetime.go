@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -9,12 +10,12 @@ import (
 )
 
 type DateTimeService struct {
-	client *clients.DucklingClient
+	client clients.DucklingParser
 	months map[time.Month]string
 	days   map[time.Weekday]string
 }
 
-func NewDateTimeService(client *clients.DucklingClient) *DateTimeService {
+func NewDateTimeService(client clients.DucklingParser) *DateTimeService {
 	return &DateTimeService{
 		client: client,
 		months: map[time.Month]string{
@@ -43,8 +44,8 @@ func NewDateTimeService(client *clients.DucklingClient) *DateTimeService {
 	}
 }
 
-func (s *DateTimeService) ParseDateTime(text string, ref time.Time) (time.Time, error) {
-	DTItems, err := s.client.Parse(text, ref)
+func (s *DateTimeService) ParseDateTime(ctx context.Context, text string, ref time.Time) (time.Time, error) {
+	DTItems, err := s.client.Parse(ctx, text, ref)
 	if err != nil {
 		return time.Time{}, err
 	}

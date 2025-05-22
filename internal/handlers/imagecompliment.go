@@ -22,7 +22,7 @@ func ComplimentImageHandler(appCtx *app.AppContext) bot.HandlerFunc {
 
 		compliment := appCtx.ComplimentService.Random()
 
-		imgBytes, err := appCtx.ImageComplimentService.Generate(compliment)
+		imgBytes, err := appCtx.ImageComplimentService.Generate(ctx, compliment)
 		if err != nil {
 			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{

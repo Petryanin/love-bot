@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"image/color"
 
@@ -10,43 +11,43 @@ import (
 )
 
 type ImageComplimentService struct {
-	Client    *clients.CatAASClient
-	FontPath  string
-	FontSize  float64
-	ImgWidth  int
-	ImgHeight int
+	client    clients.CatGetter
+	fontPath  string
+	fontSize  float64
+	imgWidth  int
+	imgHeight int
 }
 
 // конструктор
-func NewImageComplimentService(client *clients.CatAASClient, fontPath string) *ImageComplimentService {
+func NewImageComplimentService(client clients.CatGetter, fontPath string) *ImageComplimentService {
 	return &ImageComplimentService{
-		Client:    client,
-		FontPath:  fontPath,
-		FontSize:  45,
-		ImgWidth:  700,
-		ImgHeight: 700,
+		client:    client,
+		fontPath:  fontPath,
+		fontSize:  45,
+		imgWidth:  700,
+		imgHeight: 700,
 	}
 }
 
 // Generate возвращает PNG-байты картинки с наклеенным комплиментом
-func (s *ImageComplimentService) Generate(compliment string) ([]byte, error) {
+func (s *ImageComplimentService) Generate(ctx context.Context, compliment string) ([]byte, error) {
 	// 1. Получаем чистое фото кота нужного размера
-	baseImg, err := s.Client.Image(s.ImgHeight, s.ImgWidth)
+	baseImg, err := s.client.Image(ctx, s.imgHeight, s.imgWidth)
 	if err != nil {
 		return nil, err
 	}
 
 	// 2. Создаём контекст для рисования
-	dc := gg.NewContext(s.ImgWidth, s.ImgHeight)
+	dc := gg.NewContext(s.imgWidth, s.imgHeight)
 	dc.DrawImage(*baseImg, 0, 0)
 
 	// 3. Загружаем шрифт
-	if err := dc.LoadFontFace(s.FontPath, s.FontSize); err != nil {
-		return nil, fmt.Errorf("failed to load font %s: %w", s.FontPath, err)
+	if err := dc.LoadFontFace(s.fontPath, s.fontSize); err != nil {
+		return nil, fmt.Errorf("failed to load font %s: %w", s.fontPath, err)
 	}
 
 	// 4. Готовим текст: разбиваем на строки по ширине
-	wrappedText := dc.WordWrap(compliment, float64(s.ImgWidth)*0.9)
+	wrappedText := dc.WordWrap(compliment, float64(s.imgWidth)*0.9)
 
 	// параметры тени
 	shadowOffsetX := 3.0                    // смещение вправо
@@ -76,7 +77,7 @@ func (s *ImageComplimentService) Generate(compliment string) ([]byte, error) {
 }
 
 func (s *ImageComplimentService) calculateHorizontalOffset() float64 {
-	return float64(s.ImgWidth) / 2
+	return float64(s.imgWidth) / 2
 }
 
 func (s *ImageComplimentService) calculateVerticalOffset(dc *gg.Context, wrappedText []string) float64 {
@@ -91,5 +92,5 @@ func (s *ImageComplimentService) calculateVerticalOffset(dc *gg.Context, wrapped
 		multiplier = 2
 	}
 
-	return float64(s.ImgHeight) - dc.FontHeight()*float64(textRows)*multiplier
+	return float64(s.imgHeight) - dc.FontHeight()*float64(textRows)*multiplier
 }
