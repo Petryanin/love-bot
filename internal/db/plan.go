@@ -46,20 +46,6 @@ func NewPlanService(dbPath string, partnersChatIDs []int64) *PlanService {
 	if err != nil {
 		log.Fatal("failed to open a database")
 	}
-	// создаём таблицу, если нет
-	_, err = db.Exec(
-		`CREATE TABLE IF NOT EXISTS plan (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			chat_id INTEGER NOT NULL,
-			description TEXT NOT NULL,
-			event_time DATETIME NOT NULL,
-			remind_time DATETIME NOT NULL,
-			reminded BOOLEAN NOT NULL DEFAULT FALSE
-		)`,
-	)
-	if err != nil {
-		log.Fatal("failed to create table")
-	}
 	return &PlanService{db: db, partnersChatIDs: partnersChatIDs}
 }
 
