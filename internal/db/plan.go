@@ -1,5 +1,4 @@
-// internal/services/plan.go
-package services
+package db
 
 import (
 	"database/sql"

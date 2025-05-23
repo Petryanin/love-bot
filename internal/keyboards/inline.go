@@ -5,12 +5,12 @@ import (
 	"strconv"
 
 	"github.com/Petryanin/love-bot/internal/config"
-	"github.com/Petryanin/love-bot/internal/services"
+	"github.com/Petryanin/love-bot/internal/db"
 	"github.com/go-telegram/bot/models"
 )
 
 func PlansListInlineKeyboard(
-	plans []services.Plan,
+	plans []db.Plan,
 	pageNumber int,
 	hasPrev, hasNext bool,
 ) *models.InlineKeyboardMarkup {
@@ -44,7 +44,7 @@ func PlansListInlineKeyboard(
 	return &models.InlineKeyboardMarkup{InlineKeyboard: keyboard}
 }
 
-func PlansDetailInlineKeyboard(plan *services.Plan, isRemindMenu bool) *models.InlineKeyboardMarkup {
+func PlansDetailInlineKeyboard(plan *db.Plan, isRemindMenu bool) *models.InlineKeyboardMarkup {
 	buttons := make([]models.InlineKeyboardButton, 0, 2)
 	buttons = append(buttons, models.InlineKeyboardButton{
 		Text:         config.DeleteInlineBtn,

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/Petryanin/love-bot/internal/config"
+	"github.com/Petryanin/love-bot/internal/db"
 	"github.com/Petryanin/love-bot/internal/keyboards"
 	"github.com/Petryanin/love-bot/internal/services"
 	"github.com/go-telegram/bot"
@@ -180,7 +181,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		sess.TempRemind = remind
 
 		// сохраняем в БД
-		p := &services.Plan{
+		p := &db.Plan{
 			ChatID:      chatID,
 			Description: sess.TempDesc,
 			EventTime:   sess.TempEvent,
@@ -404,7 +405,7 @@ func PlansChangeRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func PlansRemindHandler(plan *services.Plan, appCtx *app.AppContext) bot.HandlerFunc {
+func PlansRemindHandler(plan *db.Plan, appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		if upd != nil {
 			b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
