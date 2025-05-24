@@ -64,7 +64,7 @@ func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
 		bot.HandlerTypeMessageText,
 		"",
 		bot.MatchTypePrefix,
-		handlers.PlansHandler(appCtx),
+		handlers.StateRootHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,

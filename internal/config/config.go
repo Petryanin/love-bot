@@ -24,6 +24,7 @@ type Config struct {
 	WeatherAPIKey  string `mapstructure:"WEATHER_API_KEY"`
 	WeatherAPIURL  string `mapstructure:"WEATHER_API_URL"`
 	WeatherAPICity string `mapstructure:"WEATHER_API_CITY"`
+	WeatherAPILang string `mapstructure:"WEATHER_API_LANG"`
 
 	CatAPIURL string `mapstructure:"CAT_API_URL"`
 
@@ -35,6 +36,10 @@ type Config struct {
 	DucklingLocale string `mapstructure:"DUCKLING_LOCALE"`
 
 	MagicBallImagesPath string `mapstructure:"MAGIC_BALL_IMAGES_PATH"`
+
+	GeoNamesAPIURL      string `mapstructure:"GEONAMES_API_URL"`
+	GeoNamesAPIUsername string `mapstructure:"GEONAMES_API_USERNAME"`
+	GeoNamesAPILang     string `mapstructure:"GEONAMES_API_LANG"`
 }
 
 func Load(path string) (*Config, error) {

@@ -41,14 +41,16 @@ type WeatherFetcher interface {
 type OpenWeatherMapClient struct {
 	api    Requester
 	apiKey string
+	lang   string
 }
 
 var _ WeatherFetcher = (*OpenWeatherMapClient)(nil)
 
-func NewOpenWeatherMapClient(baseURL, apiKey string) *OpenWeatherMapClient {
+func NewOpenWeatherMapClient(baseURL, apiKey, lang string) *OpenWeatherMapClient {
 	return &OpenWeatherMapClient{
 		api:    NewBaseClient(baseURL),
 		apiKey: apiKey,
+		lang:   lang,
 	}
 }
 
@@ -63,7 +65,7 @@ func (c *OpenWeatherMapClient) Fetch(ctx context.Context, city string) (WeatherI
 	q.Set("q", city)
 	q.Set("appid", c.apiKey)
 	q.Set("units", "metric")
-	q.Set("lang", "ru")
+	q.Set("lang", c.lang)
 	u.RawQuery = q.Encode()
 
 	log.Printf("requesting %q", u.String())

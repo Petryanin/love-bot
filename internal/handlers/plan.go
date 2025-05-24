@@ -20,48 +20,45 @@ import (
 func PlansHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
-		b.SendChatAction(ctx, &bot.SendChatActionParams{
-			ChatID: chatID,
-			Action: models.ChatActionTyping,
-		})
-
 		sess := appCtx.SessionManager.Get(chatID)
 		text := upd.Message.Text
 
-		var allowedMap = map[string]struct{}{
-			config.PlansBtn:  {},
-			config.BackBtn:   {},
-			config.AddBtn:    {},
-			config.ListBtn:   {},
-			config.CancelBtn: {},
+		var allowedMap = map[string]bool{
+			config.PlansBtn:  true,
+			config.BackBtn:   true,
+			config.AddBtn:    true,
+			config.ListBtn:   true,
+			config.CancelBtn: true,
 		}
-		_, ok := allowedMap[text]
-		if sess.State == services.StateMenu && !ok {
-			FallbackHandler(ctx, b, upd)
+
+		if sess.State == services.StatePlanMenu && !allowedMap[text] {
+			FallbackHandler(keyboards.PlanMenuKeyboard())(ctx, b, upd)
 			return
 		}
 
 		switch sess.State {
-		// Главное меню “Планы”
-		case services.StateMenu:
+		case services.StateRoot:
+			sess.State = services.StatePlanMenu
+			fallthrough
+
+		case services.StatePlanMenu:
 			plansMenuHandler(appCtx)(ctx, b, upd)
 			return
-		// Ввод описания
-		case services.StateAddingAwaitDesc:
+
+		case services.StatePlanAddingAwaitDesc:
 			plansAddingAwaitDescHandler(appCtx)(ctx, b, upd)
 			return
-		// Ввод времени события
-		case services.StateAddingAwaitEventTime:
+
+		case services.StatePlanAddingAwaitEventTime:
 			plansAddingAwaitEventTimeHandler(appCtx)(ctx, b, upd)
 			return
-		// Ввод времени напоминания
-		case services.StateAddingAwaitRemindTime:
+
+		case services.StatePlanAddingAwaitRemindTime:
 			plansAddingAwaitRemindTimeHandler(appCtx)(ctx, b, upd)
 			return
 		}
 
-		// ничего больше не попало — fallback
-		FallbackHandler(ctx, b, upd)
+		FallbackHandler(keyboards.PlanMenuKeyboard())(ctx, b, upd)
 	}
 }
 
@@ -72,7 +69,7 @@ func plansMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		sess := appCtx.SessionManager.Get(chatID)
 
 		if text == config.PlansBtn || text == config.CancelBtn {
-			sess.State = services.StateMenu
+			sess.State = services.StatePlanMenu
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
 				Text:        "Меню планов: о чем вам напомнить?",
@@ -82,11 +79,11 @@ func plansMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		}
 		// Добавить новый план
 		if text == config.AddBtn {
-			sess.State = services.StateAddingAwaitDesc
+			sess.State = services.StatePlanAddingAwaitDesc
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
 				Text:        "Введите текст напоминания",
-				ReplyMarkup: keyboards.PlanMenuCancelKeyboard(),
+				ReplyMarkup: keyboards.CancelKeyboard(),
 			})
 			return
 		}
@@ -108,12 +105,12 @@ func plansAddingAwaitDescHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		sess := appCtx.SessionManager.Get(chatID)
 
 		if text == config.CancelBtn {
-			appCtx.SessionManager.Reset(chatID)
+			sess.State = services.StatePlanMenu
 			PlansHandler(appCtx)(ctx, b, upd)
 			return
 		}
 		sess.TempDesc = text
-		sess.State = services.StateAddingAwaitEventTime
+		sess.State = services.StatePlanAddingAwaitEventTime
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: chatID,
 			Text:   "Когда это событие произойдёт?",
@@ -128,7 +125,7 @@ func plansAddingAwaitEventTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		sess := appCtx.SessionManager.Get(chatID)
 
 		if text == config.CancelBtn {
-			appCtx.SessionManager.Reset(chatID)
+			sess.State = services.StatePlanMenu
 			PlansHandler(appCtx)(ctx, b, upd)
 			return
 		}
@@ -143,7 +140,7 @@ func plansAddingAwaitEventTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		}
 
 		sess.TempEvent = parsedDT
-		sess.State = services.StateAddingAwaitRemindTime
+		sess.State = services.StatePlanAddingAwaitRemindTime
 
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID:      chatID,
@@ -160,7 +157,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		sess := appCtx.SessionManager.Get(chatID)
 
 		if text == config.CancelBtn {
-			appCtx.SessionManager.Reset(chatID)
+			sess.State = services.StatePlanMenu
 			PlansHandler(appCtx)(ctx, b, upd)
 			return
 		}
@@ -207,7 +204,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				})
 			}
 		}
-		sess.State = services.StateMenu
+		sess.State = services.StatePlanMenu
 	}
 }
 
@@ -298,7 +295,7 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		}
 
 		sess := appCtx.SessionManager.Get(chatID)
-		sess.State = services.StateMenu
+		sess.State = services.StatePlanMenu
 
 		if upd.CallbackQuery != nil && strings.HasPrefix(upd.CallbackQuery.Data, "plans:page:") {
 			fmt.Sscanf(upd.CallbackQuery.Data, "plans:page:%d", &sess.TempPage)
@@ -363,11 +360,11 @@ func PlansChangeRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
 				Text:        "Введите время повторного напоминания",
-				ReplyMarkup: keyboards.PlanMenuCancelKeyboard(),
+				ReplyMarkup: keyboards.CancelKeyboard(),
 			})
 
 			sess := appCtx.SessionManager.Get(chatID)
-			sess.State = services.StateAddingAwaitRemindTime
+			sess.State = services.StatePlanAddingAwaitRemindTime
 			sess.TempPlanID = planID
 			return
 		}

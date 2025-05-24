@@ -5,6 +5,7 @@ const (
 	ComplimentBtn   = "😻Кото-мплимент"
 	TogetherTimeBtn = "♥️Сколько мы вместе?"
 	MagicBallBtn    = "🔮Магический шар"
+	SettingsBtn     = "⚙️Настройки"
 
 	PlansBtn    = "📆Планы"
 	ListBtn     = "📄Список"
@@ -21,6 +22,9 @@ const (
 	ForwardArrowInlineBtn = "Вперед >>"
 	OpenInlineBtn         = "Открыть"
 	InputTimeInlineBtn    = "Введите время"
+
+	CityBtn    = "📍Город"
+	PartnerBtn = "💞Партнер"
 
 	StartCmd = "start"
 	HelpCmd  = "help"

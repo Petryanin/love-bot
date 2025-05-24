@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"os"
 	"os/signal"
@@ -22,7 +23,12 @@ func main() {
 
 	cfg, err := config.Load(".env")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("main: failed to load configuration: %w", err)
+	}
+
+	database, err := sql.Open("sqlite3", cfg.DBPath)
+	if err != nil {
+		log.Fatal("main: failed to open db: %w", err)
 	}
 
 	appCtx := &app.AppContext{
@@ -31,11 +37,14 @@ func main() {
 		RelationshipService:    services.NewRelationshipService(cfg.DatingStartDate.In(cfg.DatingStartTZ)),
 		ComplimentService:      services.NewComplimentService(),
 		ImageComplimentService: services.NewImageComplimentService(clients.NewCatAASClient(cfg.CatAPIURL), cfg.FontPath),
-		PlanService:            db.NewPlanService(cfg.DBPath, cfg.TgPartnersChatIDs),
 		SessionManager:         services.NewSessionManager(),
-		WeatherService:         services.NewWeatherService(clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey), cfg.WeatherAPICity),
+		WeatherService:         services.NewWeatherService(clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey, cfg.WeatherAPILang), cfg.WeatherAPICity),
 		DateTimeService:        services.NewDateTimeService(clients.NewDucklingClient(cfg.DucklingAPIURL, cfg.DucklingLocale, cfg.DucklingTZ)),
 		MagicBallService:       services.NewMagicBallService(cfg.MagicBallImagesPath),
+		GeoService:             services.NewGeoService(clients.NewGeoNamesClient(cfg.GeoNamesAPIURL, cfg.GeoNamesAPIUsername, cfg.GeoNamesAPILang)),
+
+		PlanService: db.NewPlanService(database, cfg.TgPartnersChatIDs),
+		UserService: db.NewUserManager(database),
 	}
 
 	bot := bot.CreateBot(appCtx)

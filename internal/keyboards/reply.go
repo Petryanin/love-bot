@@ -18,10 +18,10 @@ func BaseReplyKeyboard() *models.ReplyKeyboardMarkup {
 			{
 				{Text: config.TogetherTimeBtn},
 				{Text: config.MagicBallBtn},
+				{Text: config.SettingsBtn},
 			},
 		},
-		ResizeKeyboard:  true,
-		OneTimeKeyboard: false,
+		ResizeKeyboard: true,
 	}
 }
 
@@ -40,15 +40,14 @@ func PlanMenuKeyboard() *models.ReplyKeyboardMarkup {
 	}
 }
 
-func PlanMenuCancelKeyboard() *models.ReplyKeyboardMarkup {
+func CancelKeyboard() *models.ReplyKeyboardMarkup {
 	return &models.ReplyKeyboardMarkup{
 		Keyboard: [][]models.KeyboardButton{
 			{
 				{Text: config.CancelBtn},
 			},
 		},
-		ResizeKeyboard:  true,
-		OneTimeKeyboard: true,
+		ResizeKeyboard: true,
 	}
 }
 
@@ -60,6 +59,20 @@ func PlanMenuRemindKeyboard() *models.ReplyKeyboardMarkup {
 			},
 			{
 				{Text: config.CancelBtn},
+			},
+		},
+		ResizeKeyboard: true,
+	}
+}
+
+func SettingsMenuKeyboard() *models.ReplyKeyboardMarkup {
+	return &models.ReplyKeyboardMarkup{
+		Keyboard: [][]models.KeyboardButton{
+			{
+				{Text: config.CityBtn}, {Text: config.PartnerBtn},
+			},
+			{
+				{Text: config.BackBtn},
 			},
 		},
 		ResizeKeyboard: true,

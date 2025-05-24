@@ -41,11 +41,7 @@ type PlanService struct {
 
 var _ Planner = (*PlanService)(nil)
 
-func NewPlanService(dbPath string, partnersChatIDs []int64) *PlanService {
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		log.Fatal("failed to open a database")
-	}
+func NewPlanService(db *sql.DB, partnersChatIDs []int64) *PlanService {
 	return &PlanService{db: db, partnersChatIDs: partnersChatIDs}
 }
 
