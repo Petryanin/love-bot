@@ -40,6 +40,8 @@ type Config struct {
 	GeoNamesAPIURL      string `mapstructure:"GEONAMES_API_URL"`
 	GeoNamesAPIUsername string `mapstructure:"GEONAMES_API_USERNAME"`
 	GeoNamesAPILang     string `mapstructure:"GEONAMES_API_LANG"`
+
+	ComplimentsFilePath string `mapstructure:"COMPLIMENTS_FILE_PATH"`
 }
 
 func Load(path string) (*Config, error) {

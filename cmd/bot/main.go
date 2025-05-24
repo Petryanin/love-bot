@@ -35,7 +35,7 @@ func main() {
 		Cfg: cfg,
 
 		RelationshipService:    services.NewRelationshipService(cfg.DatingStartDate.In(cfg.DatingStartTZ)),
-		ComplimentService:      services.NewComplimentService(),
+		ComplimentService:      services.NewComplimentService(cfg.ComplimentsFilePath),
 		ImageComplimentService: services.NewImageComplimentService(clients.NewCatAASClient(cfg.CatAPIURL), cfg.FontPath),
 		SessionManager:         services.NewSessionManager(),
 		WeatherService:         services.NewWeatherService(clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey, cfg.WeatherAPILang), cfg.WeatherAPICity),
