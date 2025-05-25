@@ -43,7 +43,7 @@ func main() {
 		MagicBallService:       services.NewMagicBallService(cfg.MagicBallImagesPath),
 		GeoService:             services.NewGeoService(clients.NewGeoNamesClient(cfg.GeoNamesAPIURL, cfg.GeoNamesAPIUsername, cfg.GeoNamesAPILang)),
 
-		PlanService: db.NewPlanService(database, cfg.TgPartnersChatIDs),
+		PlanService: db.NewPlanService(database),
 		UserService: db.NewUserManager(database),
 	}
 

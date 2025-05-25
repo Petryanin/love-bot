@@ -78,7 +78,7 @@ func settingsMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 
 		switch {
 		case text == config.SettingsBtn || text == config.CancelBtn:
-			user, err := appCtx.UserService.GetByID(ctx, chatID)
+			user, err := appCtx.UserService.GetByID(ctx, chatID, false)
 			if err != nil {
 				log.Print("handlers: failed to get user info: %w", err)
 				appCtx.SessionManager.Reset(chatID)

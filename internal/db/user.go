@@ -21,7 +21,7 @@ type UserFull struct {
 }
 
 type UserManager interface {
-	GetByID(ctx context.Context, chatID int64) (*UserFull, error)
+	GetByID(ctx context.Context, chatID int64, byPartner bool) (*UserFull, error)
 	Upsert(ctx context.Context, user *User) error
 	UpdateGeo(ctx context.Context, chatID int64, city, tz string) error
 	UpdatePartner(ctx context.Context, chatID int64, partnerName string) error
@@ -37,28 +37,49 @@ func NewUserManager(db *sql.DB) *userManager {
 	return &userManager{db: db}
 }
 
-func (um *userManager) GetByID(ctx context.Context, chatID int64) (*UserFull, error) {
-	row := um.db.QueryRowContext(ctx, `
-		SELECT u.username, u.city, u.tz, u.partner_id, p.username
-		FROM user u
-		JOIN user p on p.chat_id = u.partner_id
-		WHERE u.chat_id = ?
-	`, chatID)
-
-	var tzName string
-	var user UserFull
-	var err error
-
-	user.ChatID = chatID
-
-	if err = row.Scan(&user.Name, &user.City, &tzName, &user.PartnerID, &user.PartnerName); err != nil {
-		return nil, fmt.Errorf("db: failed to get user from db: %w", err)
+func (um *userManager) GetByID(ctx context.Context, id int64, byPartner bool) (*UserFull, error) {
+	var where string
+	if byPartner {
+		where = "u.partner_id = ?"
+	} else {
+		where = "u.chat_id = ?"
 	}
 
-	user.TZ, err = time.LoadLocation(tzName)
+	query := fmt.Sprintf(`
+        SELECT
+            u.chat_id, u.username, u.city, u.tz,
+            u.partner_id, p.username
+        FROM user AS u
+        JOIN user AS p ON p.chat_id = u.partner_id
+        WHERE %s
+    `, where)
+
+	row := um.db.QueryRowContext(ctx, query, id)
+
+	var (
+		user   UserFull
+		tzName string
+	)
+
+	if err := row.Scan(
+		&user.ChatID,
+		&user.Name,
+		&user.City,
+		&tzName,
+		&user.PartnerID,
+		&user.PartnerName,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("db: user not found (byPartner=%v, id=%d)", byPartner, id)
+		}
+		return nil, fmt.Errorf("db: query scan error: %w", err)
+	}
+
+	loc, err := time.LoadLocation(tzName)
 	if err != nil {
 		return nil, fmt.Errorf("db: failed to load user location: %w", err)
 	}
+	user.TZ = loc
 
 	return &user, nil
 }

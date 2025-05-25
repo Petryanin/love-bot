@@ -185,7 +185,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			RemindTime:  sess.TempRemind,
 		}
 		if err := appCtx.PlanService.Add(p); err != nil {
-			log.Fatal(err)
+			log.Print("handlers: failed to save plan: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "😥Ошибка при сохранении"})
 		} else {
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -194,13 +194,17 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				ReplyMarkup: keyboards.PlanMenuKeyboard(),
 			})
 
-			for _, id := range appCtx.PlanService.PartnersChatIDs() {
+			partner, err := appCtx.UserService.GetByID(ctx, chatID, false)
+			if err != nil {
+				log.Print(err)
+			} else {
+				log.Printf("partner EventTime = %s", p.EventTime)
 				b.SendMessage(ctx, &bot.SendMessageParams{
-					ChatID: id,
+					ChatID: partner.ChatID,
 					Text: fmt.Sprintf(
 						"Твоя Вкущуща создала новый план: %s на %s",
 						p.Description,
-						appCtx.DateTimeService.FormatDateRu(p.EventTime)),
+						appCtx.DateTimeService.FormatDateRu(p.EventTime.In(partner.TZ))),
 				})
 			}
 		}

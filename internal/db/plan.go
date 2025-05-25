@@ -31,18 +31,16 @@ type Planner interface {
 	Delete(id int64) error
 	GetDueAndMark(now time.Time) ([]Plan, error)
 	Schedule(id int64, t time.Time) error
-	PartnersChatIDs() []int64
 }
 
 type PlanService struct {
-	db              *sql.DB
-	partnersChatIDs []int64
+	db *sql.DB
 }
 
 var _ Planner = (*PlanService)(nil)
 
-func NewPlanService(db *sql.DB, partnersChatIDs []int64) *PlanService {
-	return &PlanService{db: db, partnersChatIDs: partnersChatIDs}
+func NewPlanService(db *sql.DB) *PlanService {
+	return &PlanService{db: db}
 }
 
 func (s *PlanService) Add(p *Plan) error {
@@ -214,8 +212,4 @@ func (s *PlanService) Schedule(id int64, t time.Time) error {
 		UPDATE plan SET remind_time = ?, reminded = FALSE WHERE id = ?`, t, id,
 	)
 	return err
-}
-
-func (s *PlanService) PartnersChatIDs() []int64 {
-	return s.partnersChatIDs
 }
