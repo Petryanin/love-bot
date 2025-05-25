@@ -23,11 +23,7 @@ type Plan struct {
 type Planner interface {
 	Add(p *Plan) error
 	GetByID(id int64, cfg *config.Config) (*Plan, error)
-	List(
-		chatID int64,
-		pageNumber int,
-		cfg *config.Config,
-	) (plans []Plan, hasPrev, hasNext bool, err error)
+	List(chatID int64, pageNumber int) (plans []Plan, hasPrev, hasNext bool, err error)
 	Delete(id int64) error
 	GetDueAndMark(now time.Time) ([]Plan, error)
 	Schedule(id int64, t time.Time) error
@@ -86,8 +82,6 @@ func (s *PlanService) GetByID(id int64, cfg *config.Config) (*Plan, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid remind_time in db: %w", err)
 	}
-	p.EventTime = p.EventTime.In(cfg.DefaultTZ)
-	p.RemindTime = p.RemindTime.In(cfg.DefaultTZ)
 
 	return &p, nil
 }
@@ -95,7 +89,6 @@ func (s *PlanService) GetByID(id int64, cfg *config.Config) (*Plan, error) {
 func (s *PlanService) List(
 	chatID int64,
 	pageNumber int,
-	cfg *config.Config,
 ) (plans []Plan, hasPrev, hasNext bool, err error) {
 	offset := pageNumber * config.NavPageSize
 	limit := config.NavPageSize + 1
@@ -129,9 +122,6 @@ func (s *PlanService) List(
 			log.Print("error scanning row: %w", err)
 			return nil, false, false, err
 		}
-
-		p.EventTime = p.EventTime.In(cfg.DefaultTZ)
-		p.RemindTime = p.RemindTime.In(cfg.DefaultTZ)
 		result = append(result, p)
 	}
 

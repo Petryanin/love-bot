@@ -26,32 +26,30 @@ type parseRequest struct {
 }
 
 type DucklingParser interface {
-	Parse(ctx context.Context, text string, ref time.Time) ([]ParseResponse, error)
+	Parse(ctx context.Context, text string, ref time.Time, tz string) ([]ParseResponse, error)
 }
 
 type DucklingClient struct {
 	api     Requester
 	locale  string
-	tz      string
 	headers map[string]string
 }
 
 var _ DucklingParser = (*DucklingClient)(nil)
 
-func NewDucklingClient(baseURL, locale, tz string) *DucklingClient {
+func NewDucklingClient(baseURL, locale string) *DucklingClient {
 	return &DucklingClient{
 		api:     NewBaseClient(baseURL),
 		locale:  locale,
-		tz:      tz,
 		headers: map[string]string{"Content-Type": "application/x-www-form-urlencoded"},
 	}
 }
 
-func (c *DucklingClient) Parse(ctx context.Context, text string, ref time.Time) ([]ParseResponse, error) {
+func (c *DucklingClient) Parse(ctx context.Context, text string, ref time.Time, tz string) ([]ParseResponse, error) {
 	data := url.Values{}
 	data.Set("text", text)
 	data.Set("locale", c.locale)
-	data.Set("tz", c.tz)
+	data.Set("tz", tz)
 	data.Set("reftime", strconv.FormatInt(ref.UnixMilli(), 10))
 
 	endpoint := fmt.Sprintf("%s/parse", c.api.BaseURL())

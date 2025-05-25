@@ -44,8 +44,8 @@ func NewDateTimeService(client clients.DucklingParser) *DateTimeService {
 	}
 }
 
-func (s *DateTimeService) ParseDateTime(ctx context.Context, text string, ref time.Time) (time.Time, error) {
-	DTItems, err := s.client.Parse(ctx, text, ref)
+func (s *DateTimeService) ParseDateTime(ctx context.Context, text string, ref time.Time, tz string) (time.Time, error) {
+	DTItems, err := s.client.Parse(ctx, text, ref, tz)
 	if err != nil {
 		return time.Time{}, err
 	}

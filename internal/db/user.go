@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -25,6 +26,7 @@ type UserManager interface {
 	Upsert(ctx context.Context, user *User) error
 	UpdateGeo(ctx context.Context, chatID int64, city, tz string) error
 	UpdatePartner(ctx context.Context, chatID int64, partnerName string) error
+	TZ(ctx context.Context, chatID int64, byPartner bool, defaultTZ *time.Location) (tz *time.Location)
 }
 
 type userManager struct {
@@ -149,4 +151,15 @@ func (um *userManager) UpdatePartner(ctx context.Context, chatID int64, partnerN
 		return fmt.Errorf("db: user %d not found", chatID)
 	}
 	return nil
+}
+
+func (um *userManager) TZ(ctx context.Context, chatID int64, byPartner bool, defaultTZ *time.Location) (tz *time.Location) {
+	user, err := um.GetByID(ctx, chatID, byPartner)
+	if err != nil {
+		log.Printf("db: failed to get user %d: %s", chatID, err)
+		tz = defaultTZ
+	} else {
+		tz = user.TZ
+	}
+	return tz
 }
