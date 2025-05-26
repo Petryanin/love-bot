@@ -34,6 +34,7 @@ func HelpHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		"\"" + config.PlansBtn + "\" — меню планов и напоминаний",
 		"\"" + config.TogetherTimeBtn + "\" — время ваших отношений",
 		"\"" + config.MagicBallBtn + "\" — поможет тебе принять решение",
+		"\"" + config.SettingsBtn + "\" — меню твоих настроек",
 	}, "\n")
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:    chatID,
