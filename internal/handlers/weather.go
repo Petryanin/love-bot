@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/Petryanin/love-bot/internal/app"
+	"github.com/Petryanin/love-bot/internal/db"
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
@@ -18,9 +19,21 @@ func WeatherHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			Action: models.ChatActionTyping,
 		})
 
-		summary, err := appCtx.WeatherService.TodaySummary(ctx)
+		user, err := appCtx.UserService.Get(ctx, db.WithChatID(chatID))
 		if err != nil {
-			log.Printf("failed to get weather summary: %v", err.Error())
+			// todo исправить логику
+			log.Print("handlers: failed to get user info: %w", err)
+			appCtx.SessionManager.Reset(chatID)
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: chatID,
+				Text:   "Упс, не удалось получить погоду 😿\nПопробуй позже",
+			})
+			return
+		}
+
+		summary, err := appCtx.WeatherService.TodaySummary(ctx, user.City)
+		if err != nil {
+			log.Printf("handlers: failed to get weather summary: %v", err.Error())
 			summary = "Не удалось получить погоду 😕"
 		}
 

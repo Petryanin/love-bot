@@ -27,7 +27,7 @@ func TestTodaySummary(t *testing.T) {
 		)
 		svc := NewWeatherService(clientMock, city)
 
-		summary, err := svc.TodaySummary(context.Background())
+		summary, err := svc.TodaySummary(context.Background(), city)
 
 		assert.NoError(t, err)
 		assert.Contains(t, summary, "Тестоград")
@@ -40,7 +40,7 @@ func TestTodaySummary(t *testing.T) {
 		)
 		svc := NewWeatherService(clientMock, city)
 
-		_, err := svc.TodaySummary(context.Background())
+		_, err := svc.TodaySummary(context.Background(), city)
 
 		assert.Error(t, err)
 		clientMock.AssertExpectations(t)

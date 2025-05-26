@@ -19,12 +19,11 @@ type WeatherService struct {
 func NewWeatherService(client clients.WeatherFetcher, city string) *WeatherService {
 	return &WeatherService{
 		client: client,
-		city:   city,
 	}
 }
 
-func (ws *WeatherService) TodaySummary(ctx context.Context) (string, error) {
-	weather, err := ws.client.Fetch(ctx, ws.city)
+func (ws *WeatherService) TodaySummary(ctx context.Context, city string) (string, error) {
+	weather, err := ws.client.Fetch(ctx, city)
 	if err != nil {
 		return "", err
 	}
