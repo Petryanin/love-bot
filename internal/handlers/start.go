@@ -126,7 +126,6 @@ func startCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID:      chatID,
 			Text:        msg,
-			ReplyMarkup: keyboards.SettingsMenuKeyboard(),
 			ParseMode:   models.ParseModeMarkdown,
 		})
 	}
