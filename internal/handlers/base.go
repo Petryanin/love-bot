@@ -79,6 +79,8 @@ func StateRootHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			PlansHandler(appCtx)(ctx, b, upd)
 		case appCtx.SessionManager.IsSettingsState(chatID):
 			SettingsHandler(appCtx)(ctx, b, upd)
+		case appCtx.SessionManager.IsStartSettingsState(chatID):
+			StartHandler(appCtx)(ctx, b, upd)
 		}
 	}
 }

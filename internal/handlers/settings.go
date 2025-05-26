@@ -8,6 +8,7 @@ import (
 
 	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/Petryanin/love-bot/internal/config"
+	"github.com/Petryanin/love-bot/internal/db"
 	"github.com/Petryanin/love-bot/internal/keyboards"
 	"github.com/Petryanin/love-bot/internal/services"
 	"github.com/go-telegram/bot"
@@ -78,7 +79,7 @@ func settingsMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 
 		switch {
 		case text == config.SettingsBtn || text == config.CancelBtn:
-			user, err := appCtx.UserService.GetByID(ctx, chatID, false)
+			user, err := appCtx.UserService.Get(ctx, db.WithChatID(chatID), db.WithPartnerInfo())
 			if err != nil {
 				log.Print("handlers: failed to get user info: %w", err)
 				appCtx.SessionManager.Reset(chatID)
@@ -91,7 +92,7 @@ func settingsMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			}
 
 			tz := user.TZ.String()
-			text = fmt.Sprintf(
+			msg := fmt.Sprintf(
 				"*Ваши текущие настройки:*\n\n"+
 					"\\- город: *%s*\n"+
 					"\\- часовой пояс: *%s* \n"+
@@ -100,7 +101,7 @@ func settingsMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
-				Text:        text,
+				Text:        msg,
 				ReplyMarkup: keyboards.SettingsMenuKeyboard(),
 				ParseMode:   models.ParseModeMarkdown,
 			})
@@ -109,8 +110,8 @@ func settingsMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			sess.State = services.StateSettingsCity
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: chatID,
-				Text: "Пожалуйста, отправьте мне название своего города или вашу геолокацию.\n\n" +
-					"Это поможет мне давать вам актуальную сводку погоды и учитывать часовой пояс при напоминаниях",
+				Text: "Пожалуйста, отправь мне название своего города или твою геолокацию.\n\n" +
+					"Это поможет мне предоставлять актуальную сводку погоды и учитывать часовой пояс при напоминаниях",
 				ReplyMarkup: keyboards.CancelKeyboard(),
 			})
 
@@ -118,7 +119,7 @@ func settingsMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			sess.State = services.StateSettingsPartner
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: chatID,
-				Text: "Пожалуйста, введите Telegram-ник вашего партнёра.\n\n" +
+				Text: "Пожалуйста, введи Telegram-ник твоего партнёра.\n\n" +
 					"Это поможет мне учитывать ваши совместные планы.",
 				ReplyMarkup: keyboards.CancelKeyboard(),
 			})
@@ -164,6 +165,11 @@ func settingsCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				})
 				return
 			}
+		} else {
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: chatID, Text: "🧐Не могу распознять такой тип сообщения, попробуй ещё",
+			})
+			return
 		}
 
 		appCtx.UserService.UpdateGeo(ctx, chatID, city, tz)
@@ -210,7 +216,7 @@ func settingsPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
 					"Проверь правильность написания и попробуй ещё.\n\n" +
 					"Если не поможет, то возможно это связано с тем, что у нас ещё не было диалога. " +
 					"Буду ждать, пока вы оба зарегистрируетесь 🤗\n\n" +
-					"Если и это не поможет, обратитесь к администратору",
+					"Если и это не поможет, обратись к администратору",
 			})
 			return
 		}

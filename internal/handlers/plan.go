@@ -130,7 +130,7 @@ func plansAddingAwaitEventTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		tz := appCtx.UserService.TZ(ctx, chatID, false, appCtx.Cfg.DefaultTZ)
+		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		parsedDT, err := appCtx.DateTimeService.ParseDateTime(ctx, text, time.Now(), tz.String())
 		if err != nil {
@@ -168,7 +168,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		if text == config.SameTimeBtn {
 			remind = sess.TempEvent
 		} else {
-			tz := appCtx.UserService.TZ(ctx, chatID, false, appCtx.Cfg.DefaultTZ)
+			tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
 			parsedDT, err := appCtx.DateTimeService.ParseDateTime(ctx, text, time.Now(), tz.String())
 			if err != nil {
 				b.SendMessage(ctx, &bot.SendMessageParams{
@@ -197,11 +197,10 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				ReplyMarkup: keyboards.PlanMenuKeyboard(),
 			})
 
-			partner, err := appCtx.UserService.GetByID(ctx, chatID, false)
+			partner, err := appCtx.UserService.Get(ctx, db.WithPartnerID(chatID))
 			if err != nil {
 				log.Print(err)
 			} else {
-				log.Printf("partner EventTime = %s", p.EventTime)
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID: partner.ChatID,
 					Text: fmt.Sprintf(
@@ -238,7 +237,7 @@ func PlansDetailsHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			log.Print("handlers: failed to get plan from DB: %w", err)
 		}
 
-		tz := appCtx.UserService.TZ(ctx, chatID, false, appCtx.Cfg.DefaultTZ)
+		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		replyText := strings.Join([]string{
 			plan.Description + "\n",
@@ -318,7 +317,7 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		tz := appCtx.UserService.TZ(ctx, chatID, false, appCtx.Cfg.DefaultTZ)
+		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		var lines []string
 		for i, p := range plans {
@@ -399,7 +398,7 @@ func PlansChangeRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		tz := appCtx.UserService.TZ(ctx, chatID, false, appCtx.Cfg.DefaultTZ)
+		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		text := fmt.Sprintf(
 			"%s\n\nХорошо, напомню вам снова в это время: %s",
@@ -440,7 +439,7 @@ func PlansRemindHandler(plan *db.Plan, appCtx *app.AppContext) bot.HandlerFunc {
 			chatID = plan.ChatID
 		}
 
-		tz := appCtx.UserService.TZ(ctx, chatID, false, appCtx.Cfg.DefaultTZ)
+		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		text := fmt.Sprintf(
 			"📢Напоминание: %s (%s)\n\n Напомнить снова через:",

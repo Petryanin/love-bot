@@ -15,6 +15,9 @@ const (
 	StateSettingsMenu
 	StateSettingsCity
 	StateSettingsPartner
+
+	StateStartCity
+	StateStartPartner
 )
 
 type Session struct {
@@ -24,6 +27,9 @@ type Session struct {
 	TempRemind time.Time
 	TempPage   int
 	TempPlanID int64
+
+	TempStartCity string
+	TempStartTZ   string
 }
 
 type SessionManager struct {
@@ -55,4 +61,9 @@ func (m *SessionManager) IsPlanState(chatID int64) bool {
 func (m *SessionManager) IsSettingsState(chatID int64) bool {
 	state := m.sessions[chatID].State
 	return state >= StateSettingsMenu && state <= StateSettingsPartner
+}
+
+func (m *SessionManager) IsStartSettingsState(chatID int64) bool {
+	state := m.sessions[chatID].State
+	return state >= StateStartCity && state <= StateStartPartner
 }
