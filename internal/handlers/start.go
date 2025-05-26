@@ -19,6 +19,14 @@ func StartHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		chatID := upd.Message.Chat.ID
 		sess := appCtx.SessionManager.Get(chatID)
 
+		if sess.State != services.StateRoot && !appCtx.SessionManager.IsStartSettingsState(chatID) {
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: chatID,
+				Text:   "В данный момент команда недоступна😢",
+			})
+			return
+		}
+
 		b.SendChatAction(ctx, &bot.SendChatActionParams{
 			ChatID: chatID,
 			Action: models.ChatActionTyping,
@@ -124,9 +132,9 @@ func startCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			bot.EscapeMarkdown("\n\nТеперь отправь мне Telegram-ник твоего партнёра.\n\n"+
 				"Это поможет мне учитывать ваши совместные планы.")
 		b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID:      chatID,
-			Text:        msg,
-			ParseMode:   models.ParseModeMarkdown,
+			ChatID:    chatID,
+			Text:      msg,
+			ParseMode: models.ParseModeMarkdown,
 		})
 	}
 }

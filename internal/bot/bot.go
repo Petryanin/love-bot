@@ -33,7 +33,7 @@ func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
 		bot.HandlerTypeMessageText,
 		config.HelpCmd,
 		bot.MatchTypeCommand,
-		handlers.HelpHandler,
+		handlers.HelpHandler(appCtx),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,

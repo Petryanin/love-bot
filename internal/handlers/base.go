@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/Petryanin/love-bot/internal/config"
@@ -53,6 +54,10 @@ func FallbackHandler(kb *models.ReplyKeyboardMarkup) bot.HandlerFunc {
 
 func StateRootHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
+		if strings.HasPrefix(upd.Message.Text, "/") {
+			return
+		}
+
 		chatID := upd.Message.Chat.ID
 		sess := appCtx.SessionManager.Get(chatID)
 		text := upd.Message.Text
