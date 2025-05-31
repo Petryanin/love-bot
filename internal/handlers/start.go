@@ -50,17 +50,14 @@ func StartHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		codeLines := services.CountCodeLines(".")
-		linesCount := fmt.Sprintf("%d %s", codeLines, services.Pluralize(codeLines, "строку", "строки", "строк"))
-
 		text := "Привет\\! Я *Вкущуща* — твой романтический помощник 💌\n\n" +
 			bot.EscapeMarkdown(
 				"Можешь сразу нажать на одну из кнопок или позвать команду /help, "+
 					"чтобы ознакомиться с моими функциями подробнее.\n\n\n"+
 					"От разработчика:\n"+
 					"Меня зовут Алексей @Petryanin\n") +
-			fmt.Sprintf("Исходный код открыт — на данный момент проект насчитывает *%s*\\.\n", linesCount) +
-			"Я очень старался и буду благодарен за ⭐ на [github](https://github.com/Petryanin/love-bot)"
+			"Исходный код открыт и выложен на [github](https://github.com/Petryanin/love-bot)" +
+			"Я очень старался и буду благодарен за ⭐"
 
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID:      chatID,
@@ -188,9 +185,6 @@ func startPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		}
 		appCtx.SessionManager.Reset(chatID)
 
-		codeLines := services.CountCodeLines(".")
-		linesCount := fmt.Sprintf("%d %s", codeLines, services.Pluralize(codeLines, "строку", "строки", "строк"))
-
 		if !strings.HasPrefix(text, "@") {
 			text = "@" + text
 		}
@@ -202,8 +196,8 @@ func startPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				"чтобы ознакомиться с моими функциями подробнее.\n\n\n"+
 				"От разработчика:\n"+
 				"Меня зовут Алексей @Petryanin\n") +
-			fmt.Sprintf("Исходный код открыт — на данный момент проект насчитывает *%s*\\.\n", linesCount) +
-			"Я очень старался и буду благодарен за ⭐ на [github](https://github.com/Petryanin/love-bot)"
+			"Исходный код открыт и выложен на [github](https://github.com/Petryanin/love-bot)" +
+			"Я очень старался и буду благодарен за ⭐"
 
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID:      chatID,
