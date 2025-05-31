@@ -311,7 +311,7 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			sess.TempPage = 0
 		}
 
-		plans, hasPrev, hasNext, _ := appCtx.PlanService.List(chatID, sess.TempPage)
+		plans, hasPrev, hasNext, _ := appCtx.PlanService.List(sess.TempPage)
 		if len(plans) == 0 {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "У вас нет планов"})
 			return
@@ -456,11 +456,21 @@ func PlansRemindHandler(plan *db.Plan, appCtx *app.AppContext) bot.HandlerFunc {
 				ReplyMarkup: kb,
 			})
 		} else {
-			b.SendMessage(context.Background(), &bot.SendMessageParams{
-				ChatID:      plan.ChatID,
-				Text:        text,
-				ReplyMarkup: kb,
-			})
+			chatIDs := []int64{chatID}
+			partner, err := appCtx.UserService.Get(ctx, db.WithPartnerID(chatID))
+			if err != nil {
+				log.Print(err)
+			} else {
+				chatIDs = append(chatIDs, partner.ChatID)
+			}
+
+			for _, id := range chatIDs {
+				b.SendMessage(context.Background(), &bot.SendMessageParams{
+					ChatID:      id,
+					Text:        text,
+					ReplyMarkup: kb,
+				})
+			}
 		}
 	}
 }

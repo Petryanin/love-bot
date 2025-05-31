@@ -23,7 +23,7 @@ type Plan struct {
 type Planner interface {
 	Add(p *Plan) error
 	GetByID(id int64, cfg *config.Config) (*Plan, error)
-	List(chatID int64, pageNumber int) (plans []Plan, hasPrev, hasNext bool, err error)
+	List(pageNumber int) (plans []Plan, hasPrev, hasNext bool, err error)
 	Delete(id int64) error
 	GetDueAndMark(now time.Time) ([]Plan, error)
 	Schedule(id int64, t time.Time) error
@@ -86,20 +86,16 @@ func (s *PlanService) GetByID(id int64, cfg *config.Config) (*Plan, error) {
 	return &p, nil
 }
 
-func (s *PlanService) List(
-	chatID int64,
-	pageNumber int,
-) (plans []Plan, hasPrev, hasNext bool, err error) {
+func (s *PlanService) List(pageNumber int) (plans []Plan, hasPrev, hasNext bool, err error) {
 	offset := pageNumber * config.NavPageSize
 	limit := config.NavPageSize + 1
 
 	rows, err := s.db.Query(`
         SELECT id, description, event_time, remind_time
         FROM plan
-        WHERE chat_id = ?
         ORDER BY id ASC
         LIMIT ? OFFSET ?`,
-		chatID, limit, offset,
+		limit, offset,
 	)
 	if err != nil {
 		log.Print("error executing query: %w", err)
@@ -110,7 +106,6 @@ func (s *PlanService) List(
 	var result []Plan
 	for rows.Next() {
 		var p Plan
-		p.ChatID = chatID
 
 		err := rows.Scan(
 			&p.ID,
