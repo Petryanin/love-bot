@@ -21,20 +21,6 @@ func PlansHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		sess := app.Session.Get(chatID)
-		text := upd.Message.Text
-
-		var allowedMap = map[string]bool{
-			config.PlansBtn:  true,
-			config.BackBtn:   true,
-			config.AddBtn:    true,
-			config.ListBtn:   true,
-			config.CancelBtn: true,
-		}
-
-		if sess.State == services.StatePlanMenu && !allowedMap[text] {
-			FallbackHandler(keyboards.PlanMenuKeyboard())(ctx, b, upd)
-			return
-		}
 
 		switch sess.State {
 		case services.StateRoot:
@@ -43,22 +29,20 @@ func PlansHandler(app *app.App) bot.HandlerFunc {
 
 		case services.StatePlanMenu:
 			plansMenuHandler(app)(ctx, b, upd)
-			return
 
 		case services.StatePlanAddingAwaitDesc:
 			plansAddingAwaitDescHandler(app)(ctx, b, upd)
-			return
 
 		case services.StatePlanAddingAwaitEventTime:
 			plansAddingAwaitEventTimeHandler(app)(ctx, b, upd)
-			return
 
 		case services.StatePlanAddingAwaitRemindTime:
 			plansAddingAwaitRemindTimeHandler(app)(ctx, b, upd)
-			return
-		}
 
-		FallbackHandler(keyboards.PlanMenuKeyboard())(ctx, b, upd)
+		default:
+			FallbackHandler(keyboards.PlanMenuKeyboard())(ctx, b, upd)
+
+		}
 	}
 }
 
@@ -68,32 +52,32 @@ func plansMenuHandler(app *app.App) bot.HandlerFunc {
 		text := upd.Message.Text
 		sess := app.Session.Get(chatID)
 
-		if text == config.PlansBtn || text == config.CancelBtn {
+		switch {
+		case text == config.PlansBtn || text == config.CancelBtn:
 			sess.State = services.StatePlanMenu
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
 				Text:        "Меню планов: о чем вам напомнить?",
 				ReplyMarkup: keyboards.PlanMenuKeyboard(),
 			})
-			return
-		}
-		// Добавить новый план
-		if text == config.AddBtn {
+
+		case text == config.AddBtn:
 			sess.State = services.StatePlanAddingAwaitDesc
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
 				Text:        "Введите текст напоминания",
 				ReplyMarkup: keyboards.CancelKeyboard(),
 			})
-			return
-		}
-		// Список планов
-		if text == config.ListBtn {
+
+		case text == config.ListBtn:
 			PlansListHandler(app)(ctx, b, upd)
-		}
-		if text == config.BackBtn {
+
+		case text == config.BackBtn:
 			app.Session.Reset(chatID)
 			DefaultReplyHandler(ctx, b, upd)
+
+		default:
+			plansAddingAwaitDescHandler(app)(ctx, b, upd)
 		}
 	}
 }
@@ -112,8 +96,9 @@ func plansAddingAwaitDescHandler(app *app.App) bot.HandlerFunc {
 		sess.TempDesc = text
 		sess.State = services.StatePlanAddingAwaitEventTime
 		b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID: chatID,
-			Text:   "Когда это событие произойдёт?",
+			ChatID:      chatID,
+			Text:        "Когда это событие произойдёт?",
+			ReplyMarkup: keyboards.CancelKeyboard(),
 		})
 	}
 }
