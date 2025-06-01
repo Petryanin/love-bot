@@ -32,3 +32,26 @@ func StartPlanScheduler(
 		}
 	}()
 }
+
+func StartCatScheduler(
+	ctx context.Context,
+	b *bot.Bot,
+	app *app.App,
+	interval time.Duration,
+) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for now := range ticker.C {
+			dueUsers, err := app.User.FetchDueCats(context.Background(), now.UTC())
+			if err != nil {
+				log.Printf("scheduler: failed to fetch cats: %v", err)
+				continue
+			}
+			for _, u := range dueUsers {
+				handlers.ScheduledComplimentImageHandler(ctx, app, b, u.ChatID)
+			}
+		}
+	}()
+}

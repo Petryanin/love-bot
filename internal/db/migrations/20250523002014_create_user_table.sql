@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS user (
     username TEXT UNIQUE,
     city TEXT NOT NULL,
     tz TEXT NOT NULL,
-    partner_id INTEGER
+    cat_time TEXT NOT NULL DEFAULT '',
+    partner_id INTEGER,
 );
 -- +goose StatementEnd
 

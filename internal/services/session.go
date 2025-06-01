@@ -15,6 +15,7 @@ const (
 	StateSettingsMenu
 	StateSettingsCity
 	StateSettingsPartner
+	StateSettingsCat
 
 	StateStartCity
 	StateStartPartner
@@ -60,7 +61,7 @@ func (m *SessionManager) IsPlanState(chatID int64) bool {
 
 func (m *SessionManager) IsSettingsState(chatID int64) bool {
 	state := m.sessions[chatID].State
-	return state >= StateSettingsMenu && state <= StateSettingsPartner
+	return state >= StateSettingsMenu && state <= StateSettingsCat
 }
 
 func (m *SessionManager) IsStartSettingsState(chatID int64) bool {

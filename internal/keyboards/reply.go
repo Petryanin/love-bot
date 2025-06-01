@@ -51,6 +51,20 @@ func CancelKeyboard() *models.ReplyKeyboardMarkup {
 	}
 }
 
+func DisableKeyboard() *models.ReplyKeyboardMarkup {
+	return &models.ReplyKeyboardMarkup{
+		Keyboard: [][]models.KeyboardButton{
+			{
+				{Text: config.DisableBtn},
+			},
+			{
+				{Text: config.CancelBtn},
+			},
+		},
+		ResizeKeyboard: true,
+	}
+}
+
 func PlanMenuRemindKeyboard() *models.ReplyKeyboardMarkup {
 	return &models.ReplyKeyboardMarkup{
 		Keyboard: [][]models.KeyboardButton{
@@ -69,7 +83,7 @@ func SettingsMenuKeyboard() *models.ReplyKeyboardMarkup {
 	return &models.ReplyKeyboardMarkup{
 		Keyboard: [][]models.KeyboardButton{
 			{
-				{Text: config.CityBtn}, {Text: config.PartnerBtn},
+				{Text: config.CityBtn}, {Text: config.PartnerBtn}, {Text: config.CatBtn},
 			},
 			{
 				{Text: config.BackBtn},

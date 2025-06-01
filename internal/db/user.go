@@ -15,6 +15,7 @@ type User struct {
 	City      string
 	TZ        *time.Location
 	PartnerID int64
+	CatTime   time.Time
 }
 
 type UserFull struct {
@@ -27,7 +28,9 @@ type UserManager interface {
 	Upsert(ctx context.Context, chatID int64, name, city, tz string, partnerID int64) error
 	UpdateGeo(ctx context.Context, chatID int64, city, tz string) error
 	UpdatePartner(ctx context.Context, chatID int64, partnerName string) error
+	UpdateCatTime(ctx context.Context, chatID int64, catTime string) error
 	TZ(ctx context.Context, defaultTZ *time.Location, opts ...UserOption) (tz *time.Location)
+	FetchDueCats(ctx context.Context, now time.Time) ([]User, error)
 }
 
 type userManager struct {
@@ -98,7 +101,7 @@ func (um *userManager) Get(
 	var (
 		where  string
 		arg    interface{}
-		fields = []string{"u.chat_id", "u.username", "u.city", "u.tz", "u.partner_id"}
+		fields = []string{"u.chat_id", "u.username", "u.city", "u.tz", "u.partner_id", "u.cat_time"}
 		joins  []string
 	)
 
@@ -141,6 +144,7 @@ func (um *userManager) Get(
 		tzName      string
 		partnerID   int64
 		partnerName sql.NullString
+		catTimeStr  string
 	)
 
 	dest := []interface{}{
@@ -149,6 +153,7 @@ func (um *userManager) Get(
 		&city,
 		&tzName,
 		&partnerID,
+		&catTimeStr,
 	}
 
 	if options.includePartner {
@@ -176,6 +181,12 @@ func (um *userManager) Get(
 		return nil, fmt.Errorf("db: invalid timezone %q: %w", tzName, err)
 	}
 	user.TZ = loc
+
+	if catTimeStr != "" {
+		now := time.Now().In(loc)
+		t, _ := time.ParseInLocation("15:04", catTimeStr, user.TZ)
+		user.CatTime = time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, loc)
+	}
 
 	if options.includePartner {
 		user.PartnerName = partnerName.String
@@ -251,6 +262,26 @@ func (um *userManager) UpdatePartner(ctx context.Context, chatID int64, partnerN
 	return nil
 }
 
+func (um *userManager) UpdateCatTime(ctx context.Context, chatID int64, catTime string) error {
+	res, err := um.db.ExecContext(ctx, `
+		UPDATE user
+		SET cat_time = ?
+		WHERE chat_id = ?
+		`, catTime, chatID,
+	)
+	if err != nil {
+		return fmt.Errorf("db: exec update: %w", err)
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("db: checking affected rows: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("db: user %d not found", chatID)
+	}
+	return nil
+}
+
 func (um *userManager) TZ(ctx context.Context, defaultTZ *time.Location, opts ...UserOption) (tz *time.Location) {
 	user, err := um.Get(ctx, opts...)
 	if err != nil {
@@ -260,4 +291,59 @@ func (um *userManager) TZ(ctx context.Context, defaultTZ *time.Location, opts ..
 		tz = user.TZ
 	}
 	return tz
+}
+
+func (um *userManager) FetchDueCats(ctx context.Context, now time.Time) ([]User, error) {
+	// todo подумать над оптимизацией
+	rows, err := um.db.QueryContext(ctx, `
+        SELECT chat_id, tz, cat_time
+          FROM user
+         WHERE cat_time <> ''
+    `)
+	if err != nil {
+		return nil, fmt.Errorf("db: query FetchDueCats: %w", err)
+	}
+	defer rows.Close()
+
+	var result []User
+	for rows.Next() {
+		var (
+			chatID     int64
+			tzName     string
+			catTimeStr string
+		)
+		if err := rows.Scan(&chatID, &tzName, &catTimeStr); err != nil {
+			return nil, fmt.Errorf("db: scan row in FetchDueCats: %w", err)
+		}
+
+		loc, err := time.LoadLocation(tzName)
+		if err != nil {
+			continue
+		}
+
+		nowInLoc := now.In(loc)
+		parsed, err := time.ParseInLocation("15:04", catTimeStr, loc)
+		if err != nil {
+			continue
+		}
+
+		scheduled := time.Date(
+			nowInLoc.Year(), nowInLoc.Month(), nowInLoc.Day(),
+			parsed.Hour(), parsed.Minute(), 0, 0, loc,
+		)
+
+		diff := nowInLoc.Sub(scheduled)
+		if diff >= 0 && diff < time.Minute {
+			result = append(result, User{
+				ChatID:  chatID,
+				TZ:      loc,
+				CatTime: scheduled,
+			})
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("db: rows error in FetchDueCats: %w", err)
+	}
+	return result, nil
 }

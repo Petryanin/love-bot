@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"time"
 
 	"github.com/Petryanin/love-bot/internal/app"
 	"github.com/Petryanin/love-bot/internal/config"
@@ -40,6 +41,8 @@ func SettingsHandler(app *app.App) bot.HandlerFunc {
 		var allowedMap = map[string]bool{
 			config.CityBtn:    true,
 			config.PartnerBtn: true,
+			config.CatBtn:     true,
+			config.DisableBtn: true,
 			config.BackBtn:    true,
 			config.CancelBtn:  true,
 		}
@@ -64,6 +67,10 @@ func SettingsHandler(app *app.App) bot.HandlerFunc {
 
 		case services.StateSettingsPartner:
 			settingsPartnerHandler(app)(ctx, b, upd)
+			return
+
+		case services.StateSettingsCat:
+			settingsCatHandler(app)(ctx, b, upd)
 			return
 		}
 
@@ -92,12 +99,21 @@ func settingsMenuHandler(app *app.App) bot.HandlerFunc {
 			}
 
 			tz := user.TZ.String()
+
+			var catTimeStr string
+			catTime := user.CatTime
+			if catTime.IsZero() {
+				catTimeStr = "Отключены"
+			} else {
+				catTimeStr = "Каждый день в " + catTime.Format("15:04")
+			}
 			msg := fmt.Sprintf(
 				"*Ваши текущие настройки:*\n\n"+
 					"\\- город: *%s*\n"+
-					"\\- часовой пояс: *%s* \n"+
-					"\\- партнер: @%s",
-				user.City, tz, bot.EscapeMarkdown(user.PartnerName),
+					"\\- часовой пояс: *%s*\n"+
+					"\\- партнер: @%s\n"+
+					"\\- котики: *%s*",
+				user.City, tz, bot.EscapeMarkdown(user.PartnerName), catTimeStr,
 			)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
@@ -122,6 +138,15 @@ func settingsMenuHandler(app *app.App) bot.HandlerFunc {
 				Text: "Пожалуйста, введи Telegram-ник твоего партнёра.\n\n" +
 					"Это поможет мне учитывать ваши совместные планы.",
 				ReplyMarkup: keyboards.CancelKeyboard(),
+			})
+
+		case text == config.CatBtn:
+			sess.State = services.StateSettingsCat
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: chatID,
+				Text: "Пожалуйста, введи время, в которое тебе ежедневно будут прилетать котики (в формате HH:MM) " +
+					"или нажми «" + config.DisableBtn + "», чтобы отказаться от подписки.",
+				ReplyMarkup: keyboards.DisableKeyboard(),
 			})
 
 		case text == config.BackBtn:
@@ -227,5 +252,74 @@ func settingsPartnerHandler(app *app.App) bot.HandlerFunc {
 			Text:        fmt.Sprintf("Партнёр сохранён: %s", text),
 			ReplyMarkup: keyboards.SettingsMenuKeyboard(),
 		})
+	}
+}
+
+func settingsCatHandler(app *app.App) bot.HandlerFunc {
+	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
+		chatID := upd.Message.Chat.ID
+		text := upd.Message.Text
+		sess := app.Session.Get(chatID)
+
+		if text == config.CancelBtn {
+			sess.State = services.StateSettingsMenu
+			SettingsHandler(app)(ctx, b, upd)
+			return
+		}
+
+		if text == config.DisableBtn {
+			err := app.User.UpdateCatTime(ctx, chatID, "")
+			if err != nil {
+				log.Print("handlers: %w", err)
+				b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID: chatID,
+					Text:   "Упс, произошла ошибка. Обратись к администратору",
+				})
+				return
+			}
+			sess.State = services.StateSettingsMenu
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID:      chatID,
+				Text:        "👌Хорошо, больше не буду присылать тебе котиков",
+				ReplyMarkup: keyboards.SettingsMenuKeyboard(),
+			})
+			return
+		}
+
+		user, err := app.User.Get(ctx, db.WithChatID(chatID))
+		if err != nil {
+			log.Print("handlers: failed to get user info: %w", err)
+			app.Session.Reset(chatID)
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID:      chatID,
+				Text:        "Упс, не удалось получить информацию по пользователю 😿\nПопробуй позже",
+				ReplyMarkup: keyboards.BaseReplyKeyboard(),
+			})
+			return
+		}
+		_, err = time.ParseInLocation("15:04", text, user.TZ)
+		if err != nil {
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: chatID,
+				Text:   "😿Неверный формат. Введи время в виде HH:MM, например «18:30»",
+			})
+			return
+		}
+
+		if err := app.User.UpdateCatTime(ctx, chatID, text); err != nil {
+			log.Printf("handlers: UpdateCatTime error: %v", err)
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: chatID,
+				Text:   "Упс, не удалось сохранить время 😿\nПопробуй позже",
+			})
+			return
+		}
+		sess.State = services.StateSettingsMenu
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID:      chatID,
+			Text:        fmt.Sprintf("✅ Время сохранено! Ежедневно в %s тебе будут прилетать котики😻", text),
+			ReplyMarkup: keyboards.SettingsMenuKeyboard(),
+		})
+		return
 	}
 }

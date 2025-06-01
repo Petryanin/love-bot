@@ -50,3 +50,8 @@ func ComplimentImageHandler(app *app.App) bot.HandlerFunc {
 		})
 	}
 }
+
+func ScheduledComplimentImageHandler(ctx context.Context, app *app.App, b *bot.Bot, chatID int64) {
+	update := &models.Update{Message: &models.Message{Chat: models.Chat{ID: chatID}}}
+	ComplimentImageHandler(app)(ctx, b, update)
+}

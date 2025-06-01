@@ -25,6 +25,8 @@ const (
 
 	CityBtn    = "📍Город"
 	PartnerBtn = "💞Партнер"
+	CatBtn     = "😻Котики"
+	DisableBtn = "⛔Отключить"
 
 	StartCmd = "start"
 	HelpCmd  = "help"
