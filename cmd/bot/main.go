@@ -31,26 +31,26 @@ func main() {
 		log.Fatal("main: failed to open db: %w", err)
 	}
 
-	appCtx := &app.AppContext{
+	app := &app.App{
 		Cfg: cfg,
 
-		RelationshipService:    services.NewRelationshipService(cfg.DatingStartDate.In(cfg.DatingStartTZ)),
-		ComplimentService:      services.NewComplimentService(cfg.ComplimentsFilePath),
-		ImageComplimentService: services.NewImageComplimentService(clients.NewCatAASClient(cfg.CatAPIURL), cfg.FontPath),
-		SessionManager:         services.NewSessionManager(),
-		WeatherService:         services.NewWeatherService(clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey, cfg.WeatherAPILang), cfg.WeatherAPICity),
-		DateTimeService:        services.NewDateTimeService(clients.NewDucklingClient(cfg.DucklingAPIURL, cfg.DucklingLocale)),
-		MagicBallService:       services.NewMagicBallService(cfg.MagicBallImagesPath),
-		GeoService:             services.NewGeoService(clients.NewGeoNamesClient(cfg.GeoNamesAPIURL, cfg.GeoNamesAPIUsername, cfg.GeoNamesAPILang)),
+		Relationship:    services.NewRelationshipService(cfg.DatingStartDate.In(cfg.DatingStartTZ)),
+		Compliment:      services.NewComplimentService(cfg.ComplimentsFilePath),
+		ImageCompliment: services.NewImageComplimentService(clients.NewCatAASClient(cfg.CatAPIURL), cfg.FontPath),
+		Session:         services.NewSessionManager(),
+		Weather:         services.NewWeatherService(clients.NewOpenWeatherMapClient(cfg.WeatherAPIURL, cfg.WeatherAPIKey, cfg.WeatherAPILang), cfg.WeatherAPICity),
+		DateTime:        services.NewDateTimeService(clients.NewDucklingClient(cfg.DucklingAPIURL, cfg.DucklingLocale)),
+		MagicBall:       services.NewMagicBallService(cfg.MagicBallImagesPath),
+		Geo:             services.NewGeoService(clients.NewGeoNamesClient(cfg.GeoNamesAPIURL, cfg.GeoNamesAPIUsername, cfg.GeoNamesAPILang)),
 
-		PlanService: db.NewPlanService(database),
-		UserService: db.NewUserManager(database),
+		Plan: db.NewPlanService(database),
+		User: db.NewUserManager(database),
 	}
 
-	bot := bot.CreateBot(appCtx)
+	bot := bot.CreateBot(app)
 
 	log.Print("starting plan scheduler...")
-	scheduler.StartPlanScheduler(ctx, bot, appCtx, time.Second*5)
+	scheduler.StartPlanScheduler(ctx, bot, app, time.Second*5)
 
 	log.Print("starting bot...")
 	bot.Start(ctx)

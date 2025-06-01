@@ -13,11 +13,11 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func MagicBallHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func MagicBallHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		chatID := update.Message.Chat.ID
 
-		file, err := appCtx.MagicBallService.ImageAnswer()
+		file, err := app.MagicBall.ImageAnswer()
 		if err != nil {
 			log.Print("handlers: failed to get magic ball image file: %w", err)
 		}

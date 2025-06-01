@@ -9,7 +9,7 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func TogetherTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func TogetherTimeHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		chatID := update.Message.Chat.ID
 
@@ -18,7 +18,7 @@ func TogetherTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			Action: models.ChatActionTyping,
 		})
 
-		text := appCtx.RelationshipService.Duration()
+		text := app.Relationship.Duration()
 
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID:    chatID,

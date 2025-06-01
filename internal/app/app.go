@@ -7,18 +7,18 @@ import (
 	"github.com/Petryanin/love-bot/internal/services"
 )
 
-type AppContext struct {
+type App struct {
 	Cfg *config.Config
 
-	RelationshipService    *services.RelationshipService
-	ComplimentService      *services.ComplimentService
-	ImageComplimentService *services.ImageComplimentService
-	SessionManager         *services.SessionManager
-	WeatherService         *services.WeatherService
-	DateTimeService        *services.DateTimeService
-	MagicBallService       *services.MagicBallService
-	GeoService             *services.GeoService
+	Relationship    *services.RelationshipService
+	Compliment      *services.ComplimentService
+	ImageCompliment *services.ImageComplimentService
+	Session         *services.SessionManager
+	Weather         *services.WeatherService
+	DateTime        *services.DateTimeService
+	MagicBall       *services.MagicBallService
+	Geo             *services.GeoService
 
-	PlanService db.Planner
-	UserService db.UserManager
+	Plan db.Planner
+	User db.UserManager
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func ComplimentImageHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func ComplimentImageHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		chatID := update.Message.Chat.ID
 
@@ -20,9 +20,9 @@ func ComplimentImageHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			Action: models.ChatActionUploadPhoto,
 		})
 
-		compliment := appCtx.ComplimentService.Random()
+		compliment := app.Compliment.Random()
 
-		imgBytes, err := appCtx.ImageComplimentService.Generate(ctx, compliment)
+		imgBytes, err := app.ImageCompliment.Generate(ctx, compliment)
 		if err != nil {
 			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{

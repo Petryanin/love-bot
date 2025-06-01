@@ -10,7 +10,7 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func WeatherHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func WeatherHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		chatID := update.Message.Chat.ID
 
@@ -19,11 +19,11 @@ func WeatherHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			Action: models.ChatActionTyping,
 		})
 
-		user, err := appCtx.UserService.Get(ctx, db.WithChatID(chatID))
+		user, err := app.User.Get(ctx, db.WithChatID(chatID))
 		if err != nil {
 			// todo исправить логику
 			log.Print("handlers: failed to get user info: %w", err)
-			appCtx.SessionManager.Reset(chatID)
+			app.Session.Reset(chatID)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: chatID,
 				Text:   "Упс, не удалось получить погоду 😿\nПопробуй позже",
@@ -31,7 +31,7 @@ func WeatherHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		summary, err := appCtx.WeatherService.TodaySummary(ctx, user.City)
+		summary, err := app.Weather.TodaySummary(ctx, user.City)
 		if err != nil {
 			log.Printf("handlers: failed to get weather summary: %v", err.Error())
 			summary = "Не удалось получить погоду 😕"

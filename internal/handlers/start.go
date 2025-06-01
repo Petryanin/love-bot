@@ -14,12 +14,12 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func StartHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func StartHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
-		if sess.State != services.StateRoot && !appCtx.SessionManager.IsStartSettingsState(chatID) {
+		if sess.State != services.StateRoot && !app.Session.IsStartSettingsState(chatID) {
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: chatID,
 				Text:   "В данный момент команда недоступна😢",
@@ -34,19 +34,19 @@ func StartHandler(appCtx *app.AppContext) bot.HandlerFunc {
 
 		switch sess.State {
 		case services.StateRoot:
-			appCtx.SessionManager.Reset(chatID)
-			_, err := appCtx.UserService.Get(ctx, db.WithChatID(chatID))
+			app.Session.Reset(chatID)
+			_, err := app.User.Get(ctx, db.WithChatID(chatID))
 			if err != nil {
-				StartSettingsHandler(appCtx)(ctx, b, upd)
+				StartSettingsHandler(app)(ctx, b, upd)
 				return
 			}
 
 		case services.StateStartCity:
-			startCityHandler(appCtx)(ctx, b, upd)
+			startCityHandler(app)(ctx, b, upd)
 			return
 
 		case services.StateStartPartner:
-			startPartnerHandler(appCtx)(ctx, b, upd)
+			startPartnerHandler(app)(ctx, b, upd)
 			return
 		}
 
@@ -68,10 +68,10 @@ func StartHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func StartSettingsHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func StartSettingsHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 		sess.State = services.StateStartCity
 
 		text := "Привет\\! Я *Вкущуща* — твой романтический помощник 💌\n\n" +
@@ -86,18 +86,18 @@ func StartSettingsHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func startCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func startCityHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		var city string
 		var tz string
 		var err error
 
 		if text != "" {
-			city, tz, err = appCtx.GeoService.ResolveByName(ctx, text)
+			city, tz, err = app.Geo.ResolveByName(ctx, text)
 			if err != nil {
 				log.Print("handlers: failed to resolve geo info by city name: %w", err)
 				b.SendMessage(ctx, &bot.SendMessageParams{
@@ -106,7 +106,7 @@ func startCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				return
 			}
 		} else if upd.Message.Location != nil {
-			city, tz, err = appCtx.GeoService.ResolveByCoords(ctx, upd.Message.Location.Latitude, upd.Message.Location.Longitude)
+			city, tz, err = app.Geo.ResolveByCoords(ctx, upd.Message.Location.Latitude, upd.Message.Location.Longitude)
 			if err != nil {
 				log.Print("handlers: failed to resolve geo info by coords: %w", err)
 				b.SendMessage(ctx, &bot.SendMessageParams{
@@ -136,11 +136,11 @@ func startCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func startPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func startPartnerHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		partnerName, err := validateTgUsername(text)
 		if err != nil {
@@ -155,7 +155,7 @@ func startPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
 
 		// todo запросить пользователя отправить юзер-объект
 		// todo переделать логику регистрации партнеров
-		partner, err := appCtx.UserService.Get(ctx, db.WithUsername(partnerName))
+		partner, err := app.User.Get(ctx, db.WithUsername(partnerName))
 		if err != nil {
 			log.Print("handlers: failed to get partner: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -170,7 +170,7 @@ func startPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		}
 
 		// todo разделить логику
-		err = appCtx.UserService.Upsert(ctx, chatID, upd.Message.From.Username, sess.TempStartCity, sess.TempStartTZ, partner.ChatID)
+		err = app.User.Upsert(ctx, chatID, upd.Message.From.Username, sess.TempStartCity, sess.TempStartTZ, partner.ChatID)
 		if err != nil {
 			log.Print("handlers: failed to upsert partner: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -183,7 +183,7 @@ func startPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			})
 			return
 		}
-		appCtx.SessionManager.Reset(chatID)
+		app.Session.Reset(chatID)
 
 		if !strings.HasPrefix(text, "@") {
 			text = "@" + text

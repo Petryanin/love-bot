@@ -17,10 +17,10 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func PlansHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func PlansHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 		text := upd.Message.Text
 
 		var allowedMap = map[string]bool{
@@ -42,19 +42,19 @@ func PlansHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			fallthrough
 
 		case services.StatePlanMenu:
-			plansMenuHandler(appCtx)(ctx, b, upd)
+			plansMenuHandler(app)(ctx, b, upd)
 			return
 
 		case services.StatePlanAddingAwaitDesc:
-			plansAddingAwaitDescHandler(appCtx)(ctx, b, upd)
+			plansAddingAwaitDescHandler(app)(ctx, b, upd)
 			return
 
 		case services.StatePlanAddingAwaitEventTime:
-			plansAddingAwaitEventTimeHandler(appCtx)(ctx, b, upd)
+			plansAddingAwaitEventTimeHandler(app)(ctx, b, upd)
 			return
 
 		case services.StatePlanAddingAwaitRemindTime:
-			plansAddingAwaitRemindTimeHandler(appCtx)(ctx, b, upd)
+			plansAddingAwaitRemindTimeHandler(app)(ctx, b, upd)
 			return
 		}
 
@@ -62,11 +62,11 @@ func PlansHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func plansMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func plansMenuHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		if text == config.PlansBtn || text == config.CancelBtn {
 			sess.State = services.StatePlanMenu
@@ -89,24 +89,24 @@ func plansMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		}
 		// Список планов
 		if text == config.ListBtn {
-			PlansListHandler(appCtx)(ctx, b, upd)
+			PlansListHandler(app)(ctx, b, upd)
 		}
 		if text == config.BackBtn {
-			appCtx.SessionManager.Reset(chatID)
+			app.Session.Reset(chatID)
 			DefaultReplyHandler(ctx, b, upd)
 		}
 	}
 }
 
-func plansAddingAwaitDescHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func plansAddingAwaitDescHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		if text == config.CancelBtn {
 			sess.State = services.StatePlanMenu
-			PlansHandler(appCtx)(ctx, b, upd)
+			PlansHandler(app)(ctx, b, upd)
 			return
 		}
 		sess.TempDesc = text
@@ -118,21 +118,21 @@ func plansAddingAwaitDescHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func plansAddingAwaitEventTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func plansAddingAwaitEventTimeHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		if text == config.CancelBtn {
 			sess.State = services.StatePlanMenu
-			PlansHandler(appCtx)(ctx, b, upd)
+			PlansHandler(app)(ctx, b, upd)
 			return
 		}
 
-		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
+		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
 
-		parsedDT, err := appCtx.DateTimeService.ParseDateTime(ctx, text, time.Now(), tz.String())
+		parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
 		if err != nil {
 			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -152,15 +152,15 @@ func plansAddingAwaitEventTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func plansAddingAwaitRemindTimeHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		if text == config.CancelBtn {
 			sess.State = services.StatePlanMenu
-			PlansHandler(appCtx)(ctx, b, upd)
+			PlansHandler(app)(ctx, b, upd)
 			return
 		}
 
@@ -168,8 +168,8 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		if text == config.SameTimeBtn {
 			remind = sess.TempEvent
 		} else {
-			tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
-			parsedDT, err := appCtx.DateTimeService.ParseDateTime(ctx, text, time.Now(), tz.String())
+			tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
+			parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
 			if err != nil {
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё",
@@ -187,7 +187,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			EventTime:   sess.TempEvent,
 			RemindTime:  sess.TempRemind,
 		}
-		if err := appCtx.PlanService.Add(p); err != nil {
+		if err := app.Plan.Add(p); err != nil {
 			log.Print("handlers: failed to save plan: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "😥Ошибка при сохранении"})
 		} else {
@@ -197,7 +197,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				ReplyMarkup: keyboards.PlanMenuKeyboard(),
 			})
 
-			partner, err := appCtx.UserService.Get(ctx, db.WithPartnerID(chatID))
+			partner, err := app.User.Get(ctx, db.WithPartnerID(chatID))
 			if err != nil {
 				log.Print(err)
 			} else {
@@ -206,7 +206,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 					Text: fmt.Sprintf(
 						"Твоя Вкущуща создала новый план: %s на %s",
 						p.Description,
-						appCtx.DateTimeService.FormatDateRu(p.EventTime.In(partner.TZ))),
+						app.DateTime.FormatDateRu(p.EventTime.In(partner.TZ))),
 				})
 			}
 		}
@@ -214,7 +214,7 @@ func plansAddingAwaitRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func PlansDetailsHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func PlansDetailsHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 			CallbackQueryID: upd.CallbackQuery.ID,
@@ -231,13 +231,13 @@ func PlansDetailsHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			log.Print("handlers: failed to get planID from callback data: %w", err)
 		}
 
-		plan, err := appCtx.PlanService.GetByID(planID, appCtx.Cfg)
+		plan, err := app.Plan.GetByID(planID, app.Cfg)
 		if err != nil {
 			// todo add error handler
 			log.Print("handlers: failed to get plan from DB: %w", err)
 		}
 
-		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
+		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		replyText := strings.Join([]string{
 			plan.Description + "\n",
@@ -256,7 +256,7 @@ func PlansDetailsHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func PlansDeleteHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func PlansDeleteHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 			CallbackQueryID: upd.CallbackQuery.ID,
@@ -272,7 +272,7 @@ func PlansDeleteHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			log.Print("failed to get planID from callback data: %w", err)
 		}
 
-		if err := appCtx.PlanService.Delete(planID); err != nil {
+		if err := app.Plan.Delete(planID); err != nil {
 			// todo add error handler
 			log.Print("failed to get plan from DB: %w", err)
 		}
@@ -286,7 +286,7 @@ func PlansDeleteHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func PlansListHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		var callbackMsgID int
 		var chatID int64
@@ -302,7 +302,7 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			callbackMsgID = upd.CallbackQuery.Message.Message.ID
 		}
 
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 		sess.State = services.StatePlanMenu
 
 		if upd.CallbackQuery != nil && strings.HasPrefix(upd.CallbackQuery.Data, "plans:page:") {
@@ -311,13 +311,13 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			sess.TempPage = 0
 		}
 
-		plans, hasPrev, hasNext, _ := appCtx.PlanService.List(sess.TempPage)
+		plans, hasPrev, hasNext, _ := app.Plan.List(sess.TempPage)
 		if len(plans) == 0 {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "У вас нет планов"})
 			return
 		}
 
-		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
+		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		var lines []string
 		for i, p := range plans {
@@ -325,7 +325,7 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				fmt.Sprintf("%d) %s (%s)",
 					sess.TempPage*config.NavPageSize+i+1,
 					p.Description,
-					appCtx.DateTimeService.FormatDateRu(p.EventTime.In(tz)),
+					app.DateTime.FormatDateRu(p.EventTime.In(tz)),
 				),
 			)
 		}
@@ -350,7 +350,7 @@ func PlansListHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func PlansChangeRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func PlansChangeRemindTimeHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		cb := upd.CallbackQuery
 		data := cb.Data
@@ -373,7 +373,7 @@ func PlansChangeRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				ReplyMarkup: keyboards.CancelKeyboard(),
 			})
 
-			sess := appCtx.SessionManager.Get(chatID)
+			sess := app.Session.Get(chatID)
 			sess.State = services.StatePlanAddingAwaitRemindTime
 			sess.TempPlanID = planID
 			return
@@ -382,12 +382,12 @@ func PlansChangeRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		mins, _ := strconv.Atoi(arg)
 		remindAt := time.Now().Add(time.Duration(mins) * time.Minute)
 
-		plan, err := appCtx.PlanService.GetByID(planID, appCtx.Cfg)
+		plan, err := app.Plan.GetByID(planID, app.Cfg)
 		if err != nil {
 			log.Print("handlers: failed to get plan from db: %w", err)
 		}
 
-		err = appCtx.PlanService.Schedule(plan.ID, remindAt)
+		err = app.Plan.Schedule(plan.ID, remindAt)
 		if err != nil {
 			log.Print("handlers: failed to schedule plan: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -398,12 +398,12 @@ func PlansChangeRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
+		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		text := fmt.Sprintf(
 			"%s\n\nХорошо, напомню вам снова в это время: %s",
 			plan.Description,
-			appCtx.DateTimeService.FormatDateRu(remindAt.In(tz)),
+			app.DateTime.FormatDateRu(remindAt.In(tz)),
 		)
 
 		b.EditMessageText(ctx, &bot.EditMessageTextParams{
@@ -415,7 +415,7 @@ func PlansChangeRemindTimeHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func PlansRemindHandler(plan *db.Plan, appCtx *app.AppContext) bot.HandlerFunc {
+func PlansRemindHandler(plan *db.Plan, app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		var chatID int64
 
@@ -428,7 +428,7 @@ func PlansRemindHandler(plan *db.Plan, appCtx *app.AppContext) bot.HandlerFunc {
 			parts := strings.Split(upd.CallbackQuery.Data, ":")
 			planID, _ := strconv.ParseInt(parts[1], 10, 64)
 
-			p, err := appCtx.PlanService.GetByID(planID, appCtx.Cfg)
+			p, err := app.Plan.GetByID(planID, app.Cfg)
 			if err != nil {
 				log.Print("handlers: failed to get plan from db: %w", err)
 				return
@@ -439,12 +439,12 @@ func PlansRemindHandler(plan *db.Plan, appCtx *app.AppContext) bot.HandlerFunc {
 			chatID = plan.ChatID
 		}
 
-		tz := appCtx.UserService.TZ(ctx, appCtx.Cfg.DefaultTZ, db.WithChatID(chatID))
+		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
 
 		text := fmt.Sprintf(
 			"📢Напоминание: %s (%s)\n\n Напомнить снова через:",
 			plan.Description,
-			appCtx.DateTimeService.FormatDateRu(plan.EventTime.In(tz)),
+			app.DateTime.FormatDateRu(plan.EventTime.In(tz)),
 		)
 
 		kb := keyboards.PlansReminderKeyboard(plan.ID)
@@ -457,7 +457,7 @@ func PlansRemindHandler(plan *db.Plan, appCtx *app.AppContext) bot.HandlerFunc {
 			})
 		} else {
 			chatIDs := []int64{chatID}
-			partner, err := appCtx.UserService.Get(ctx, db.WithPartnerID(chatID))
+			partner, err := app.User.Get(ctx, db.WithPartnerID(chatID))
 			if err != nil {
 				log.Print(err)
 			} else {

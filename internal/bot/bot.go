@@ -9,90 +9,90 @@ import (
 	"github.com/go-telegram/bot"
 )
 
-func CreateBot(appCtx *app.AppContext) *bot.Bot {
+func CreateBot(app *app.App) *bot.Bot {
 	log.Print("creating bot...")
-	b, err := bot.New(appCtx.Cfg.TgToken)
+	b, err := bot.New(app.Cfg.TgToken)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	registerHandlers(appCtx, b)
+	registerHandlers(app, b)
 
 	return b
 }
 
-func registerHandlers(appCtx *app.AppContext, b *bot.Bot) {
+func registerHandlers(app *app.App, b *bot.Bot) {
 	log.Print("registering handlers...")
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		config.StartCmd,
 		bot.MatchTypeCommand,
-		handlers.StartHandler(appCtx),
+		handlers.StartHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		config.HelpCmd,
 		bot.MatchTypeCommand,
-		handlers.HelpHandler(appCtx),
+		handlers.HelpHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		config.WeatherBtn,
 		bot.MatchTypeExact,
-		handlers.WeatherHandler(appCtx),
+		handlers.WeatherHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		config.TogetherTimeBtn,
 		bot.MatchTypeExact,
-		handlers.TogetherTimeHandler(appCtx),
+		handlers.TogetherTimeHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		config.ComplimentBtn,
 		bot.MatchTypeExact,
-		handlers.ComplimentImageHandler(appCtx),
+		handlers.ComplimentImageHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		config.MagicBallBtn,
 		bot.MatchTypeExact,
-		handlers.MagicBallHandler(appCtx),
+		handlers.MagicBallHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeMessageText,
 		"",
 		bot.MatchTypePrefix,
-		handlers.StateRootHandler(appCtx),
+		handlers.StateRootHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
 		"plan:",
 		bot.MatchTypePrefix,
-		handlers.PlansDetailsHandler(appCtx),
+		handlers.PlansDetailsHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
 		"plan_delete:",
 		bot.MatchTypePrefix,
-		handlers.PlansDeleteHandler(appCtx),
+		handlers.PlansDeleteHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
 		"plans",
 		bot.MatchTypePrefix,
-		handlers.PlansListHandler(appCtx),
+		handlers.PlansListHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
 		"remind:change:",
 		bot.MatchTypePrefix,
-		handlers.PlansChangeRemindTimeHandler(appCtx),
+		handlers.PlansChangeRemindTimeHandler(app),
 	)
 	b.RegisterHandler(
 		bot.HandlerTypeCallbackQueryData,
 		"remind:",
 		bot.MatchTypePrefix,
-		handlers.PlansRemindHandler(nil, appCtx),
+		handlers.PlansRemindHandler(nil, app),
 	)
 }

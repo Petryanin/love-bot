@@ -52,14 +52,14 @@ func FallbackHandler(kb *models.ReplyKeyboardMarkup) bot.HandlerFunc {
 	}
 }
 
-func StateRootHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func StateRootHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		if strings.HasPrefix(upd.Message.Text, "/") {
 			return
 		}
 
 		chatID := upd.Message.Chat.ID
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 		text := upd.Message.Text
 
 		b.SendChatAction(ctx, &bot.SendChatActionParams{
@@ -70,9 +70,9 @@ func StateRootHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		if sess.State == services.StateRoot {
 			switch text {
 			case config.PlansBtn:
-				PlansHandler(appCtx)(ctx, b, upd)
+				PlansHandler(app)(ctx, b, upd)
 			case config.SettingsBtn:
-				SettingsHandler(appCtx)(ctx, b, upd)
+				SettingsHandler(app)(ctx, b, upd)
 			default:
 				FallbackHandler(keyboards.BaseReplyKeyboard())(ctx, b, upd)
 			}
@@ -80,12 +80,12 @@ func StateRootHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		}
 
 		switch {
-		case appCtx.SessionManager.IsPlanState(chatID):
-			PlansHandler(appCtx)(ctx, b, upd)
-		case appCtx.SessionManager.IsSettingsState(chatID):
-			SettingsHandler(appCtx)(ctx, b, upd)
-		case appCtx.SessionManager.IsStartSettingsState(chatID):
-			StartHandler(appCtx)(ctx, b, upd)
+		case app.Session.IsPlanState(chatID):
+			PlansHandler(app)(ctx, b, upd)
+		case app.Session.IsSettingsState(chatID):
+			SettingsHandler(app)(ctx, b, upd)
+		case app.Session.IsStartSettingsState(chatID):
+			StartHandler(app)(ctx, b, upd)
 		}
 	}
 }

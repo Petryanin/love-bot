@@ -11,10 +11,10 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func HelpHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func HelpHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		if sess.State != services.StateRoot {
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -23,7 +23,7 @@ func HelpHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			})
 			return
 		}
-		appCtx.SessionManager.Reset(chatID)
+		app.Session.Reset(chatID)
 
 		b.SendChatAction(ctx, &bot.SendChatActionParams{
 			ChatID: chatID,

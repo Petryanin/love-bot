@@ -31,10 +31,10 @@ func validateTgUsername(input string) (string, error) {
 	return username, nil
 }
 
-func SettingsHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func SettingsHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 		text := upd.Message.Text
 
 		var allowedMap = map[string]bool{
@@ -55,15 +55,15 @@ func SettingsHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			fallthrough
 
 		case services.StateSettingsMenu:
-			settingsMenuHandler(appCtx)(ctx, b, upd)
+			settingsMenuHandler(app)(ctx, b, upd)
 			return
 
 		case services.StateSettingsCity:
-			settingsCityHandler(appCtx)(ctx, b, upd)
+			settingsCityHandler(app)(ctx, b, upd)
 			return
 
 		case services.StateSettingsPartner:
-			settingsPartnerHandler(appCtx)(ctx, b, upd)
+			settingsPartnerHandler(app)(ctx, b, upd)
 			return
 		}
 
@@ -71,18 +71,18 @@ func SettingsHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func settingsMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func settingsMenuHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		switch {
 		case text == config.SettingsBtn || text == config.CancelBtn:
-			user, err := appCtx.UserService.Get(ctx, db.WithChatID(chatID), db.WithPartnerInfo())
+			user, err := app.User.Get(ctx, db.WithChatID(chatID), db.WithPartnerInfo())
 			if err != nil {
 				log.Print("handlers: failed to get user info: %w", err)
-				appCtx.SessionManager.Reset(chatID)
+				app.Session.Reset(chatID)
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID:      chatID,
 					Text:        "Упс, не удалось получить информацию по пользователю 😿\nПопробуй позже",
@@ -125,17 +125,17 @@ func settingsMenuHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			})
 
 		case text == config.BackBtn:
-			appCtx.SessionManager.Reset(chatID)
+			app.Session.Reset(chatID)
 			DefaultReplyHandler(ctx, b, upd)
 		}
 	}
 }
 
-func settingsCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func settingsCityHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		var city string
 		var tz string
@@ -144,11 +144,11 @@ func settingsCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		if text != "" {
 			if text == config.CancelBtn {
 				sess.State = services.StateSettingsMenu
-				SettingsHandler(appCtx)(ctx, b, upd)
+				SettingsHandler(app)(ctx, b, upd)
 				return
 			}
 
-			city, tz, err = appCtx.GeoService.ResolveByName(ctx, text)
+			city, tz, err = app.Geo.ResolveByName(ctx, text)
 			if err != nil {
 				log.Print("handlers: failed to resolve geo info by city name: %w", err)
 				b.SendMessage(ctx, &bot.SendMessageParams{
@@ -157,7 +157,7 @@ func settingsCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 				return
 			}
 		} else if upd.Message.Location != nil {
-			city, tz, err = appCtx.GeoService.ResolveByCoords(ctx, upd.Message.Location.Latitude, upd.Message.Location.Longitude)
+			city, tz, err = app.Geo.ResolveByCoords(ctx, upd.Message.Location.Latitude, upd.Message.Location.Longitude)
 			if err != nil {
 				log.Print("handlers: failed to resolve geo info by coords: %w", err)
 				b.SendMessage(ctx, &bot.SendMessageParams{
@@ -172,7 +172,7 @@ func settingsCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 			return
 		}
 
-		appCtx.UserService.UpdateGeo(ctx, chatID, city, tz)
+		app.User.UpdateGeo(ctx, chatID, city, tz)
 		sess.State = services.StateSettingsMenu
 
 		b.SendMessage(ctx, &bot.SendMessageParams{
@@ -184,15 +184,15 @@ func settingsCityHandler(appCtx *app.AppContext) bot.HandlerFunc {
 	}
 }
 
-func settingsPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
+func settingsPartnerHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		chatID := upd.Message.Chat.ID
 		text := upd.Message.Text
-		sess := appCtx.SessionManager.Get(chatID)
+		sess := app.Session.Get(chatID)
 
 		if text == config.CancelBtn {
 			sess.State = services.StateSettingsMenu
-			SettingsHandler(appCtx)(ctx, b, upd)
+			SettingsHandler(app)(ctx, b, upd)
 			return
 		}
 
@@ -208,7 +208,7 @@ func settingsPartnerHandler(appCtx *app.AppContext) bot.HandlerFunc {
 		}
 
 		// todo запросить пользователя отправить юзер-объект
-		if err = appCtx.UserService.UpdatePartner(ctx, chatID, partnerName); err != nil {
+		if err = app.User.UpdatePartner(ctx, chatID, partnerName); err != nil {
 			log.Print("handlers: failed to update partner: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: chatID,
