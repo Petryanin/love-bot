@@ -7,7 +7,9 @@ RUN apk update --no-cache && apk add --no-cache gcc musl-dev
 COPY go.mod go.sum ./
 RUN go mod download
 
-RUN go install github.com/pressly/goose/v3/cmd/goose@latest
+ARG GOOSE_VERSION=v3.24.3
+RUN wget -qO goose https://github.com/pressly/goose/releases/download/${GOOSE_VERSION}/goose_linux_x86_64 && \
+    chmod +x goose
 
 COPY .env .env
 COPY cmd ./cmd
@@ -24,7 +26,7 @@ RUN apk update --no-cache && apk add --no-cache tzdata
 WORKDIR /app
 
 COPY --from=builder /app /usr/local/bin/app
-COPY --from=builder /go/bin/goose /usr/local/bin/goose
+COPY --from=builder /build/goose /usr/local/bin/goose
 
 COPY --from=builder /build/assets ./assets
 COPY --from=builder /build/.env ./.env
