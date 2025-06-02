@@ -1,21 +1,53 @@
-MIT License
+Copyright © 2025 Alexey Petryanin. All rights reserved.
 
-Copyright (c) 2025 Alex Petryanin
+PROPRIETARY SOFTWARE LICENSE
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and all associated files, documentation, and materials (collectively, the "Software") are the exclusive intellectual property of Alexey Petryanin ("Creator"), created solely and exclusively as a personal gift for Daria Yakushina ("Designated Owner").
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+GRANT OF OWNERSHIP
+All rights, title, and interest in and to the Software belong exclusively to the Designated Owner. The Creator retains the right to modify, update, and enhance the Software solely for the benefit of the Designated Owner, but has no rights to use, distribute, or license the Software to any third parties.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+PROHIBITED USES
+NO RIGHTS ARE GRANTED to any person, entity, or organization other than the Designated Owner and the Creator (solely for development purposes). The following activities are expressly PROHIBITED for all parties except the Designated Owner:
+
+1. Downloading, cloning, copying, or otherwise obtaining the Software or any of its contents (except Creator for development purposes);
+2. Using the Software for any purpose, whether personal, academic, commercial, or otherwise (except Creator for development and Designated Owner for any purpose);
+3. Modifying, adapting, translating, or creating derivative works based on the Software (except Creator for development purposes);
+4. Reverse engineering, decompiling, disassembling, or otherwise attempting to derive source code;
+5. Distributing, sharing, transmitting, or making available the Software in any form or medium;
+6. Sublicensing, selling, renting, leasing, or otherwise transferring rights to the Software;
+7. Incorporating any part of the Software into other projects, systems, or applications;
+8. Analyzing, benchmarking, testing, or studying the Software for any purpose (except Creator for development purposes);
+9. Creating backups, mirrors, or copies of the Software (except Creator for development purposes);
+10. Publicly displaying, performing, or demonstrating the Software.
+
+LEGAL ENFORCEMENT
+Any unauthorized access to, use of, or interaction with the Software constitutes the following violations:
+- Copyright infringement under applicable national and international laws
+- Breach of this license agreement
+- Potential grounds for civil and/or criminal prosecution
+
+Violations may result in immediate legal action, including but not limited to injunctive relief, monetary damages, and recovery of attorney’s fees, as well as any other remedies available under applicable law.
+
+EXCLUSIVE RIGHTS
+The Designated Owner has the exclusive right to:
+- Use the Software for any purpose
+- Grant permissions to third parties (at their sole discretion)
+- Transfer ownership rights
+- Take legal action to enforce these restrictions
+
+The Creator has the additional right to obtain and retain archival copies of the Software for development purposes;
+
+
+The Creator has the limited right to:
+- Modify, update, and enhance the Software solely for the benefit of the Designated Owner
+- Access the Software solely for development and maintenance purposes
+
+DISCLAIMER OF WARRANTIES
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE CREATOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE SOFTWARE.
+
+CONTACT AND JURISDICTION
+All legal matters, inquiries, or disputes regarding this Software must be directed exclusively to the Designated Owner at her official contact: Telegram @Chuvapchichi or email nezabvennayadori@gmail.com. This license shall be governed by the laws of Russian Federation.
+
+ACKNOWLEDGMENT
+By accessing this repository or viewing this license, you acknowledge that you have read, understood, and agree to be bound by these terms. If you do not agree to these terms, you must immediately cease all access to and use of the Software.
