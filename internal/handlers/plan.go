@@ -95,11 +95,20 @@ func plansAddingAwaitDescHandler(app *app.App) bot.HandlerFunc {
 		}
 
 		// пробуем сразу распознать время
+		now := time.Now()
 		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
-		parsedBody, parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
+		parsedBody, parsedDT, err := app.DateTime.Parse(ctx, text, now, tz.String())
 		if err == nil {
 			desc := strings.TrimSpace(strings.Replace(text, parsedBody, "", 1))
 			if desc != "" {
+				if parsedDT.Before(now) {
+					b.SendMessage(ctx, &bot.SendMessageParams{
+						ChatID: chatID,
+						Text:   "🧐Время должно быть в будущем, попробуй ещё",
+					})
+					return
+				}
+
 				sess.TempDesc = desc
 				sess.TempEvent = parsedDT
 				sess.State = services.StatePlanAddingAwaitRemindTime
@@ -135,13 +144,21 @@ func plansAddingAwaitEventTimeHandler(app *app.App) bot.HandlerFunc {
 			return
 		}
 
+		now := time.Now()
 		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
 
-		_, parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
+		_, parsedDT, err := app.DateTime.Parse(ctx, text, now, tz.String())
 		if err != nil {
 			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё",
+			})
+			return
+		}
+
+		if parsedDT.Before(now) {
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID: chatID, Text: "🧐Время должно быть в будущем, попробуй ещё",
 			})
 			return
 		}
@@ -175,10 +192,24 @@ func plansAddingAwaitRemindTimeHandler(app *app.App) bot.HandlerFunc {
 		if text == config.SameTimeBtn {
 			remind = sess.TempEvent
 		} else {
-			_, parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
+			now := time.Now()
+
+			_, parsedDT, err := app.DateTime.Parse(ctx, text, now, tz.String())
 			if err != nil {
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё",
+				})
+				return
+			}
+			if parsedDT.Before(now) {
+				b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID: chatID, Text: "🧐Время должно быть в будущем, попробуй ещё",
+				})
+				return
+			}
+			if parsedDT.After(sess.TempEvent) {
+				b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID: chatID, Text: "🧐Время напоминания не может быть больше времени события, попробуй ещё",
 				})
 				return
 			}
@@ -200,8 +231,8 @@ func plansAddingAwaitRemindTimeHandler(app *app.App) bot.HandlerFunc {
 			msg := fmt.Sprintf(
 				"✅План сохранён!\n\n%s %s\n(напомню %s)",
 				p.Description,
-				app.DateTime.FormatDateRu(p.EventTime.In(tz)),
-				app.DateTime.FormatDateRu(p.RemindTime.In(tz)),
+				app.DateTime.FormatRu(p.EventTime.In(tz)),
+				app.DateTime.FormatRu(p.RemindTime.In(tz)),
 			)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
@@ -218,7 +249,7 @@ func plansAddingAwaitRemindTimeHandler(app *app.App) bot.HandlerFunc {
 					Text: fmt.Sprintf(
 						"Твоя Вкущуща создала новый план: %s на %s",
 						p.Description,
-						app.DateTime.FormatDateRu(p.EventTime.In(partner.TZ))),
+						app.DateTime.FormatRu(p.EventTime.In(partner.TZ))),
 				})
 			}
 		}
@@ -337,7 +368,7 @@ func PlansListHandler(app *app.App) bot.HandlerFunc {
 				fmt.Sprintf("%d) %s (%s)",
 					sess.TempPage*config.NavPageSize+i+1,
 					p.Description,
-					app.DateTime.FormatDateRu(p.EventTime.In(tz)),
+					app.DateTime.FormatRu(p.EventTime.In(tz)),
 				),
 			)
 		}
@@ -391,12 +422,26 @@ func PlansChangeRemindTimeHandler(app *app.App) bot.HandlerFunc {
 			return
 		}
 
-		mins, _ := strconv.Atoi(arg)
-		remindAt := time.Now().Add(time.Duration(mins) * time.Minute)
-
 		plan, err := app.Plan.GetByID(planID, app.Cfg)
 		if err != nil {
 			log.Print("handlers: failed to get plan from db: %w", err)
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID:      chatID,
+				Text:        "🧐Такого плана не найдено",
+				ReplyMarkup: keyboards.PlanMenuKeyboard(),
+			})
+			return
+		}
+
+		mins, _ := strconv.Atoi(arg)
+		remindAt := time.Now().Add(time.Duration(mins) * time.Minute)
+		if remindAt.After(plan.EventTime) {
+			b.SendMessage(ctx, &bot.SendMessageParams{
+				ChatID:      chatID,
+				Text:        "🧐Время напоминания не может быть больше времени события, попробуй ещё",
+				ReplyMarkup: keyboards.PlanMenuKeyboard(),
+			})
+			return
 		}
 
 		err = app.Plan.Schedule(plan.ID, remindAt)
@@ -415,7 +460,7 @@ func PlansChangeRemindTimeHandler(app *app.App) bot.HandlerFunc {
 		text := fmt.Sprintf(
 			"%s\n\nХорошо, напомню вам снова в это время: %s",
 			plan.Description,
-			app.DateTime.FormatDateRu(remindAt.In(tz)),
+			app.DateTime.FormatRu(remindAt.In(tz)),
 		)
 
 		b.EditMessageText(ctx, &bot.EditMessageTextParams{
@@ -456,7 +501,7 @@ func PlansRemindHandler(plan *db.Plan, app *app.App) bot.HandlerFunc {
 		text := fmt.Sprintf(
 			"📢Напоминание: %s (%s)\n\n Напомнить снова через:",
 			plan.Description,
-			app.DateTime.FormatDateRu(plan.EventTime.In(tz)),
+			app.DateTime.FormatRu(plan.EventTime.In(tz)),
 		)
 
 		kb := keyboards.PlansReminderKeyboard(plan.ID)

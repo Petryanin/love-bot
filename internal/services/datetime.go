@@ -44,7 +44,7 @@ func NewDateTimeService(client clients.DucklingParser) *DateTimeService {
 	}
 }
 
-func (s *DateTimeService) ParseDateTime(
+func (s *DateTimeService) Parse(
 	ctx context.Context,
 	text string,
 	ref time.Time,
@@ -71,12 +71,12 @@ func (s *DateTimeService) ParseDateTime(
 	return text, time.Time{}, fmt.Errorf("dt service: failed to parse datetime %q", text)
 }
 
-// FormatDateRu возвращает строку вида:
+// FormatRu возвращает строку вида:
 //   - если год = текущий:
 //     "27 мая (Вт), 12:00"
 //   - если год ≠ текущий:
 //     "27 мая (Ср) 2026 в 12:00"
-func (s *DateTimeService) FormatDateRu(t time.Time) string {
+func (s *DateTimeService) FormatRu(t time.Time) string {
 	day := t.Day()
 	monthName := s.months[t.Month()]
 	weekday := s.days[t.Weekday()]
