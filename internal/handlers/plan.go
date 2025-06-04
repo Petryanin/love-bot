@@ -224,7 +224,7 @@ func plansAddingAwaitRemindTimeHandler(app *app.App) bot.HandlerFunc {
 			EventTime:   sess.TempEvent,
 			RemindTime:  sess.TempRemind,
 		}
-		if err := app.Plan.Add(p); err != nil {
+		if err := app.Plan.Add(ctx, p); err != nil {
 			log.Print("handlers: failed to save plan: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "😥Ошибка при сохранении"})
 		} else {
@@ -274,7 +274,7 @@ func PlansDetailsHandler(app *app.App) bot.HandlerFunc {
 			log.Print("handlers: failed to get planID from callback data: %w", err)
 		}
 
-		plan, err := app.Plan.GetByID(planID, app.Cfg)
+		plan, err := app.Plan.GetByID(ctx, planID, app.Cfg)
 		if err != nil {
 			// todo add error handler
 			log.Print("handlers: failed to get plan from DB: %w", err)
@@ -315,7 +315,7 @@ func PlansDeleteHandler(app *app.App) bot.HandlerFunc {
 			log.Print("failed to get planID from callback data: %w", err)
 		}
 
-		if err := app.Plan.Delete(planID); err != nil {
+		if err := app.Plan.Delete(ctx, planID); err != nil {
 			// todo add error handler
 			log.Print("failed to get plan from DB: %w", err)
 		}
@@ -354,7 +354,7 @@ func PlansListHandler(app *app.App) bot.HandlerFunc {
 			sess.TempPage = 0
 		}
 
-		plans, hasPrev, hasNext, _ := app.Plan.List(sess.TempPage)
+		plans, hasPrev, hasNext, _ := app.Plan.List(ctx, sess.TempPage)
 		if len(plans) == 0 {
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "У вас нет планов"})
 			return
@@ -422,7 +422,7 @@ func PlansChangeRemindTimeHandler(app *app.App) bot.HandlerFunc {
 			return
 		}
 
-		plan, err := app.Plan.GetByID(planID, app.Cfg)
+		plan, err := app.Plan.GetByID(ctx, planID, app.Cfg)
 		if err != nil {
 			log.Print("handlers: failed to get plan from db: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -444,7 +444,7 @@ func PlansChangeRemindTimeHandler(app *app.App) bot.HandlerFunc {
 			return
 		}
 
-		err = app.Plan.Schedule(plan.ID, remindAt)
+		err = app.Plan.Schedule(ctx, plan.ID, remindAt)
 		if err != nil {
 			log.Print("handlers: failed to schedule plan: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -485,7 +485,7 @@ func PlansRemindHandler(plan *db.Plan, app *app.App) bot.HandlerFunc {
 			parts := strings.Split(upd.CallbackQuery.Data, ":")
 			planID, _ := strconv.ParseInt(parts[1], 10, 64)
 
-			p, err := app.Plan.GetByID(planID, app.Cfg)
+			p, err := app.Plan.GetByID(ctx, planID, app.Cfg)
 			if err != nil {
 				log.Print("handlers: failed to get plan from db: %w", err)
 				return

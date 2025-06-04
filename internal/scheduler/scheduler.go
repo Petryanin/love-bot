@@ -21,7 +21,7 @@ func StartPlanScheduler(
 		defer ticker.Stop()
 
 		for now := range ticker.C {
-			duePlans, err := app.Plan.GetDueAndMark(now)
+			duePlans, err := app.Plan.GetDueAndMark(ctx, now)
 			if err != nil {
 				log.Printf("scheduler: failed to fetch plans: %v", err)
 				continue

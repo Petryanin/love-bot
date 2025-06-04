@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -21,12 +22,12 @@ type Plan struct {
 }
 
 type Planner interface {
-	Add(p *Plan) error
-	GetByID(id int64, cfg *config.Config) (*Plan, error)
-	List(pageNumber int) (plans []Plan, hasPrev, hasNext bool, err error)
-	Delete(id int64) error
-	GetDueAndMark(now time.Time) ([]Plan, error)
-	Schedule(id int64, t time.Time) error
+	Add(ctx context.Context, p *Plan) error
+	GetByID(ctx context.Context, id int64, cfg *config.Config) (*Plan, error)
+	List(ctx context.Context, pageNumber int) (plans []Plan, hasPrev, hasNext bool, err error)
+	Delete(ctx context.Context, id int64) error
+	GetDueAndMark(ctx context.Context, now time.Time) ([]Plan, error)
+	Schedule(ctx context.Context, id int64, t time.Time) error
 }
 
 type PlanService struct {
@@ -39,8 +40,8 @@ func NewPlanService(db *sql.DB) *PlanService {
 	return &PlanService{db: db}
 }
 
-func (s *PlanService) Add(p *Plan) error {
-	_, err := s.db.Exec(
+func (s *PlanService) Add(ctx context.Context, p *Plan) error {
+	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO plan (chat_id, description, event_time, remind_time)
         VALUES(?, ?, ?, ?)`,
 		p.ChatID, p.Description, p.EventTime.UTC(), p.RemindTime.UTC(),
@@ -48,10 +49,10 @@ func (s *PlanService) Add(p *Plan) error {
 	return err
 }
 
-func (s *PlanService) GetByID(id int64, cfg *config.Config) (*Plan, error) {
+func (s *PlanService) GetByID(ctx context.Context, id int64, cfg *config.Config) (*Plan, error) {
 	// подготавливаем SQL
-	row := s.db.QueryRow(`
-        SELECT id, chat_id, description, event_time, remind_time
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id, chat_id, description, event_time, remind_time
         FROM plan
         WHERE id = ?
     `, id)
@@ -86,11 +87,11 @@ func (s *PlanService) GetByID(id int64, cfg *config.Config) (*Plan, error) {
 	return &p, nil
 }
 
-func (s *PlanService) List(pageNumber int) (plans []Plan, hasPrev, hasNext bool, err error) {
+func (s *PlanService) List(ctx context.Context, pageNumber int) (plans []Plan, hasPrev, hasNext bool, err error) {
 	offset := pageNumber * config.NavPageSize
 	limit := config.NavPageSize + 1
 
-	rows, err := s.db.Query(`
+	rows, err := s.db.QueryContext(ctx, `
         SELECT id, description, event_time, remind_time
         FROM plan
         ORDER BY id ASC
@@ -130,19 +131,19 @@ func (s *PlanService) List(pageNumber int) (plans []Plan, hasPrev, hasNext bool,
 	return result, hasPrev, hasNext, nil
 }
 
-func (s *PlanService) Delete(id int64) error {
-	_, err := s.db.Exec(`DELETE FROM plan WHERE id = ?`, id)
+func (s *PlanService) Delete(ctx context.Context, id int64) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM plan WHERE id = ?`, id)
 	return err
 }
 
-func (s *PlanService) GetDueAndMark(now time.Time) ([]Plan, error) {
+func (s *PlanService) GetDueAndMark(ctx context.Context, now time.Time) ([]Plan, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query(`
+	rows, err := tx.QueryContext(ctx, `
         SELECT id, chat_id, description, event_time, remind_time
         FROM plan
         WHERE remind_time <= ? AND reminded = 0
@@ -192,8 +193,8 @@ func (s *PlanService) GetDueAndMark(now time.Time) ([]Plan, error) {
 	return duePlans, nil
 }
 
-func (s *PlanService) Schedule(id int64, t time.Time) error {
-	_, err := s.db.Exec(`
+func (s *PlanService) Schedule(ctx context.Context, id int64, t time.Time) error {
+	_, err := s.db.ExecContext(ctx, `
 		UPDATE plan SET remind_time = ?, reminded = FALSE WHERE id = ?`, t, id,
 	)
 	return err
