@@ -52,6 +52,7 @@ func main() {
 	log.Print("starting schedulers...")
 	scheduler.StartPlanScheduler(ctx, bot, app, time.Second*5)
 	scheduler.StartCatScheduler(ctx, bot, app, time.Minute)
+	scheduler.StartCleanupScheduler(ctx, app, time.Hour*2, time.Hour*24)
 
 	log.Print("starting bot...")
 	bot.Start(ctx)

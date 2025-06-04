@@ -28,6 +28,7 @@ type Planner interface {
 	Delete(ctx context.Context, id int64) error
 	GetDueAndMark(ctx context.Context, now time.Time) ([]Plan, error)
 	Schedule(ctx context.Context, id int64, t time.Time) error
+	DeleteExpired(ctx context.Context, retention time.Duration) (int64, error)
 }
 
 type PlanService struct {
@@ -94,6 +95,7 @@ func (s *PlanService) List(ctx context.Context, pageNumber int) (plans []Plan, h
 	rows, err := s.db.QueryContext(ctx, `
         SELECT id, description, event_time, remind_time
         FROM plan
+		WHERE deleted IS FALSE
         ORDER BY id ASC
         LIMIT ? OFFSET ?`,
 		limit, offset,
@@ -132,7 +134,11 @@ func (s *PlanService) List(ctx context.Context, pageNumber int) (plans []Plan, h
 }
 
 func (s *PlanService) Delete(ctx context.Context, id int64) error {
-	_, err := s.db.ExecContext(ctx, `DELETE FROM plan WHERE id = ?`, id)
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE plan
+		SET deleted = TRUE
+		WHERE id = ?
+	`, id)
 	return err
 }
 
@@ -178,7 +184,7 @@ func (s *PlanService) GetDueAndMark(ctx context.Context, now time.Time) ([]Plan,
 		args[i] = p.ID
 	}
 
-	_, err = tx.Exec(fmt.Sprintf(`
+	_, err = tx.ExecContext(ctx, fmt.Sprintf(`
         UPDATE plan
         SET reminded = TRUE
         WHERE id IN (%s)
@@ -198,4 +204,18 @@ func (s *PlanService) Schedule(ctx context.Context, id int64, t time.Time) error
 		UPDATE plan SET remind_time = ?, reminded = FALSE WHERE id = ?`, t, id,
 	)
 	return err
+}
+
+func (s *PlanService) DeleteExpired(ctx context.Context, retention time.Duration) (int64, error) {
+	threshold := time.Now().UTC().Add(-retention)
+
+	res, err := s.db.ExecContext(ctx, `
+        UPDATE plan
+		SET deleted = TRUE
+    	WHERE event_time <= ? AND deleted is FALSE
+    `, threshold)
+	if err != nil {
+		return 0, fmt.Errorf("db: exec error: %w", err)
+	}
+	return res.RowsAffected()
 }
