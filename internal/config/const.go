@@ -4,7 +4,7 @@ const (
 	WeatherBtn      = "🌤Погода"
 	ComplimentBtn   = "😻Кото-мплимент"
 	TogetherTimeBtn = "♥️Сколько мы вместе?"
-	MagicBallBtn    = "🔮Магический шар"
+	MagicBallBtn    = "🔮Шар"
 	SettingsBtn     = "⚙️Настройки"
 
 	PlansBtn    = "📆Планы"
