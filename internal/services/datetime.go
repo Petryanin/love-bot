@@ -44,10 +44,15 @@ func NewDateTimeService(client clients.DucklingParser) *DateTimeService {
 	}
 }
 
-func (s *DateTimeService) ParseDateTime(ctx context.Context, text string, ref time.Time, tz string) (time.Time, error) {
+func (s *DateTimeService) ParseDateTime(
+	ctx context.Context,
+	text string,
+	ref time.Time,
+	tz string,
+) (string, time.Time, error) {
 	DTItems, err := s.client.Parse(ctx, text, ref, tz)
 	if err != nil {
-		return time.Time{}, err
+		return text, time.Time{}, err
 	}
 
 	for _, it := range DTItems {
@@ -56,14 +61,14 @@ func (s *DateTimeService) ParseDateTime(ctx context.Context, text string, ref ti
 				dt, err := time.Parse(time.RFC3339Nano, value)
 				if err != nil {
 					log.Print("dt service: wrong datetime format: %w", err)
-					return time.Time{}, err
+					return text, time.Time{}, err
 				}
-				return dt, nil
+				return it.Body, dt, nil
 			}
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("dt service: failed to parse datetime %q", text)
+	return text, time.Time{}, fmt.Errorf("dt service: failed to parse datetime %q", text)
 }
 
 // FormatDateRu возвращает строку вида:

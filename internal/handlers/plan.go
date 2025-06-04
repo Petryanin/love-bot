@@ -93,6 +93,26 @@ func plansAddingAwaitDescHandler(app *app.App) bot.HandlerFunc {
 			PlansHandler(app)(ctx, b, upd)
 			return
 		}
+
+		// пробуем сразу распознать время
+		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
+		parsedBody, parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
+		if err == nil {
+			desc := strings.TrimSpace(strings.Replace(text, parsedBody, "", 1))
+			if desc != "" {
+				sess.TempDesc = desc
+				sess.TempEvent = parsedDT
+				sess.State = services.StatePlanAddingAwaitRemindTime
+
+				b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID:      chatID,
+					Text:        "Когда напомнить?",
+					ReplyMarkup: keyboards.PlanMenuRemindKeyboard(),
+				})
+				return
+			}
+		}
+
 		sess.TempDesc = text
 		sess.State = services.StatePlanAddingAwaitEventTime
 		b.SendMessage(ctx, &bot.SendMessageParams{
@@ -117,7 +137,7 @@ func plansAddingAwaitEventTimeHandler(app *app.App) bot.HandlerFunc {
 
 		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
 
-		parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
+		_, parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
 		if err != nil {
 			log.Print(err)
 			b.SendMessage(ctx, &bot.SendMessageParams{
@@ -149,12 +169,13 @@ func plansAddingAwaitRemindTimeHandler(app *app.App) bot.HandlerFunc {
 			return
 		}
 
+		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
 		var remind time.Time
+
 		if text == config.SameTimeBtn {
 			remind = sess.TempEvent
 		} else {
-			tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
-			parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
+			_, parsedDT, err := app.DateTime.ParseDateTime(ctx, text, time.Now(), tz.String())
 			if err != nil {
 				b.SendMessage(ctx, &bot.SendMessageParams{
 					ChatID: chatID, Text: "🧐Не смог распознать формат, попробуй ещё",
@@ -176,9 +197,15 @@ func plansAddingAwaitRemindTimeHandler(app *app.App) bot.HandlerFunc {
 			log.Print("handlers: failed to save plan: %w", err)
 			b.SendMessage(ctx, &bot.SendMessageParams{ChatID: chatID, Text: "😥Ошибка при сохранении"})
 		} else {
+			msg := fmt.Sprintf(
+				"✅План сохранён!\n\n%s %s\n(напомню %s)",
+				p.Description,
+				app.DateTime.FormatDateRu(p.EventTime.In(tz)),
+				app.DateTime.FormatDateRu(p.RemindTime.In(tz)),
+			)
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID:      chatID,
-				Text:        "✅План сохранён!",
+				Text:        msg,
 				ReplyMarkup: keyboards.PlanMenuKeyboard(),
 			})
 

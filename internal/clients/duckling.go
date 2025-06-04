@@ -12,6 +12,7 @@ import (
 )
 
 type ParseResponse struct {
+	Body  string `json:"body"`
 	Dim   string `json:"dim"`
 	Value struct {
 		Value any `json:"value"` // обычно строка ISO
