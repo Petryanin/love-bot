@@ -280,12 +280,27 @@ func PlansDetailsHandler(app *app.App) bot.HandlerFunc {
 			log.Print("handlers: failed to get plan from DB: %w", err)
 		}
 
-		tz := app.User.TZ(ctx, app.Cfg.DefaultTZ, db.WithChatID(chatID))
+		user, err := app.User.Get(ctx, db.WithChatID(chatID))
+		if err != nil {
+			log.Print(err)
+			return
+		}
+
+		var author *db.UserFull
+		var canDelete bool
+		if plan.ChatID == chatID {
+			author = user
+			canDelete = true
+		} else {
+			author, err = app.User.Get(ctx, db.WithChatID(plan.ChatID))
+			canDelete = false
+		}
 
 		replyText := strings.Join([]string{
 			plan.Description + "\n",
-			fmt.Sprintf("Время отправки уведомления:\n%s\n", plan.RemindTime.In(tz).Format(config.DTLayout)),
-			fmt.Sprintf("Дата события:\n%s", plan.EventTime.In(tz).Format(config.DTLayout)),
+			fmt.Sprintf("Время отправки уведомления:\n%s\n", plan.RemindTime.In(user.TZ).Format(config.DTLayout)),
+			fmt.Sprintf("Дата события:\n%s\n", plan.EventTime.In(user.TZ).Format(config.DTLayout)),
+			fmt.Sprintf("Создан: @%s", author.Name),
 		}, "\n")
 
 		isRemindMenu := len(splitCallbackData) == 3
@@ -294,7 +309,7 @@ func PlansDetailsHandler(app *app.App) bot.HandlerFunc {
 			MessageID:   upd.CallbackQuery.Message.Message.ID,
 			ChatID:      chatID,
 			Text:        replyText,
-			ReplyMarkup: keyboards.PlansDetailInlineKeyboard(plan, isRemindMenu),
+			ReplyMarkup: keyboards.PlansDetailInlineKeyboard(plan, canDelete, isRemindMenu),
 		})
 	}
 }

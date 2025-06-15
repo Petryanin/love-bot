@@ -44,12 +44,19 @@ func PlansListInlineKeyboard(
 	return &models.InlineKeyboardMarkup{InlineKeyboard: keyboard}
 }
 
-func PlansDetailInlineKeyboard(plan *db.Plan, isRemindMenu bool) *models.InlineKeyboardMarkup {
+func PlansDetailInlineKeyboard(
+	plan *db.Plan,
+	canDelete bool,
+	isRemindMenu bool,
+) *models.InlineKeyboardMarkup {
 	buttons := make([]models.InlineKeyboardButton, 0, 2)
-	buttons = append(buttons, models.InlineKeyboardButton{
-		Text:         config.DeleteInlineBtn,
-		CallbackData: fmt.Sprintf("plan_delete:%d", plan.ID),
-	})
+
+	if canDelete {
+		buttons = append(buttons, models.InlineKeyboardButton{
+			Text:         config.DeleteInlineBtn,
+			CallbackData: fmt.Sprintf("plan_delete:%d", plan.ID),
+		})
+	}
 
 	if isRemindMenu {
 		buttons = append(buttons, models.InlineKeyboardButton{
