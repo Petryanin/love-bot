@@ -142,19 +142,3 @@ func sendWelcomeMessage(ctx context.Context, b *bot.Bot, chatID int64) {
 		ParseMode:   models.ParseModeMarkdown,
 	})
 }
-
-func getGeoData(ctx context.Context, app *app.App, upd *models.Update) (string, string, error) {
-	if upd.Message.Text != "" {
-		return app.Geo.ResolveByName(ctx, upd.Message.Text)
-	} else if upd.Message.Location != nil {
-		return app.Geo.ResolveByCoords(ctx, upd.Message.Location.Latitude, upd.Message.Location.Longitude)
-	}
-	return "", "", fmt.Errorf(MsgUnknownMessageType)
-}
-
-func sendError(ctx context.Context, b *bot.Bot, chatID int64, text string) {
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: chatID,
-		Text:   text,
-	})
-}
