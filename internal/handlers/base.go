@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Petryanin/love-bot/internal/app"
@@ -11,6 +13,22 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
+
+const telegramUsernameRegex = `^[a-zA-Z][a-zA-Z0-9_]{4,31}$`
+
+func validateTgUsername(input string) (string, error) {
+	username := input
+	if len(username) > 0 && username[0] == '@' {
+		username = username[1:]
+	}
+
+	match, _ := regexp.MatchString(telegramUsernameRegex, username)
+	if !match {
+		return "", fmt.Errorf("wrong telegram username format: %s", username)
+	}
+
+	return username, nil
+}
 
 func DefaultReplyHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if update.Message == nil {

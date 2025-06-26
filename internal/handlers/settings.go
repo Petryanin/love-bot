@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
 	"time"
 
 	"github.com/Petryanin/love-bot/internal/app"
@@ -15,22 +14,6 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
-
-const telegramUsernameRegex = `^[a-zA-Z][a-zA-Z0-9_]{4,31}$`
-
-func validateTgUsername(input string) (string, error) {
-	username := input
-	if len(username) > 0 && username[0] == '@' {
-		username = username[1:]
-	}
-
-	match, _ := regexp.MatchString(telegramUsernameRegex, username)
-	if !match {
-		return "", fmt.Errorf("wrong telegram username format: %s", username)
-	}
-
-	return username, nil
-}
 
 func SettingsHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, upd *models.Update) {
@@ -320,6 +303,5 @@ func settingsCatHandler(app *app.App) bot.HandlerFunc {
 			Text:        fmt.Sprintf("✅ Время сохранено! Ежедневно в %s тебе будут прилетать котики😻", text),
 			ReplyMarkup: keyboards.SettingsMenuKeyboard(),
 		})
-		return
 	}
 }
