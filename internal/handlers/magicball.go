@@ -13,13 +13,21 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
+const (
+	dotsAnimationSpeed         = 600 * time.Millisecond
+	progressBarAnimationSpeed  = 500 * time.Millisecond
+	symbolsAnimationSpeed      = 700 * time.Millisecond
+	thinkingProcessInitialWait = 1300 * time.Millisecond
+	progressBarWidth           = 12
+)
+
 func MagicBallHandler(app *app.App) bot.HandlerFunc {
 	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
 		chatID := update.Message.Chat.ID
 
 		file, err := app.MagicBall.ImageAnswer()
 		if err != nil {
-			log.Print("handlers: failed to get magic ball image file: %w", err)
+			log.Printf("handlers: failed to get magic ball image file: %v", err)
 		}
 
 		emulateThinkingProcess(ctx, b, update)
@@ -41,7 +49,8 @@ func emulateThinkingProcess(ctx context.Context, b *bot.Bot, update *models.Upda
 		ChatID: chatID,
 		Text:   "🔮",
 	})
-	time.Sleep(1300 * time.Millisecond)
+
+	time.Sleep(thinkingProcessInitialWait)
 
 	animations := []func(){
 		func() { animateDots(ctx, b, chatID, msg.ID) },
@@ -59,9 +68,9 @@ func emulateThinkingProcess(ctx context.Context, b *bot.Bot, update *models.Upda
 
 func animateDots(ctx context.Context, b *bot.Bot, chatID int64, msgID int) {
 	texts := []string{
-		"🔮 Я вижу тьму",
-		"🔮 Образы начинают проясняться",
-		"🔮 Судьба медленно раскрывается",
+		MsgMagicBallThinking1,
+		MsgMagicBallThinking2,
+		MsgMagicBallThinking3,
 	}
 
 	for _, phrase := range texts {
@@ -71,7 +80,7 @@ func animateDots(ctx context.Context, b *bot.Bot, chatID int64, msgID int) {
 				MessageID: msgID,
 				Text:      phrase + strings.Repeat(".", dots),
 			})
-			time.Sleep(600 * time.Millisecond)
+			time.Sleep(dotsAnimationSpeed)
 		}
 	}
 }
@@ -84,23 +93,22 @@ func animateProgressBar(ctx context.Context, b *bot.Bot, chatID int64, msgID int
 	}
 
 	styles := []barStyle{
-		{"▓", "░", "🔮 Зарядка шара"},
-		{"■", "□", "🔮 Энергия накапливается"},
-		{"🟦", "⬜", "🔮 Оракул пробуждается"},
-		{"✶", "⋅", "🔮 Пророчество формируется"},
+		{"▓", "░", MsgMagicBallCharging},
+		{"■", "□", MsgMagicBallAccumulating},
+		{"🟦", "⬜", MsgMagicBallAwakening},
+		{"✶", "⋅", MsgMagicBallProphesying},
 	}
 
 	style := styles[rand.IntN(len(styles))]
 
-	width := 12
-	for i := 1; i <= width; i++ {
-		bar := strings.Repeat(style.filled, i) + strings.Repeat(style.empty, width-i)
+	for i := 1; i <= progressBarWidth; i++ {
+		bar := strings.Repeat(style.filled, i) + strings.Repeat(style.empty, progressBarWidth-i)
 		b.EditMessageText(ctx, &bot.EditMessageTextParams{
 			ChatID:    chatID,
 			MessageID: msgID,
 			Text:      fmt.Sprintf("%s...\n[%s]", style.caption, bar),
 		})
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(progressBarAnimationSpeed)
 	}
 }
 
@@ -121,6 +129,6 @@ func animateSymbols(ctx context.Context, b *bot.Bot, chatID int64, msgID int) {
 			MessageID: msgID,
 			Text:      fmt.Sprintf("🔮 %s", p),
 		})
-		time.Sleep(700 * time.Millisecond)
+		time.Sleep(symbolsAnimationSpeed)
 	}
 }

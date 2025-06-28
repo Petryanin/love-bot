@@ -43,4 +43,13 @@ const (
 	// Weather messages
 	MsgWeatherError        = "Упс, не удалось получить погоду 😿\nПопробуй позже"
 	MsgWeatherSummaryError = "Не удалось получить погоду 😕"
+
+	// Magic ball messages
+	MsgMagicBallThinking1    = "🔮 Я вижу тьму"
+	MsgMagicBallThinking2    = "🔮 Образы начинают проясняться"
+	MsgMagicBallThinking3    = "🔮 Судьба медленно раскрывается"
+	MsgMagicBallCharging     = "🔮 Зарядка шара"
+	MsgMagicBallAccumulating = "🔮 Энергия накапливается"
+	MsgMagicBallAwakening    = "🔮 Оракул пробуждается"
+	MsgMagicBallProphesying  = "🔮 Пророчество формируется"
 )
