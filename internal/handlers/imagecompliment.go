@@ -11,47 +11,51 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-func ComplimentImageHandler(app *app.App) bot.HandlerFunc {
-	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		chatID := update.Message.Chat.ID
+// sendComplimentImage отправляет комплимент в виде изображения или текста, если генерация не удалась
+func sendComplimentImage(ctx context.Context, b *bot.Bot, app *app.App, chatID int64) {
+	b.SendChatAction(ctx, &bot.SendChatActionParams{
+		ChatID: chatID,
+		Action: models.ChatActionUploadPhoto,
+	})
 
+	compliment := app.Compliment.Random()
+
+	imgBytes, err := app.ImageCompliment.Generate(ctx, compliment)
+	if err != nil {
+		log.Printf("failed to generate compliment image: %v", err)
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: chatID,
+			Text:   MsgComplimentImageError,
+		})
 		b.SendChatAction(ctx, &bot.SendChatActionParams{
 			ChatID: chatID,
-			Action: models.ChatActionUploadPhoto,
+			Action: models.ChatActionTyping,
 		})
-
-		compliment := app.Compliment.Random()
-
-		imgBytes, err := app.ImageCompliment.Generate(ctx, compliment)
-		if err != nil {
-			log.Print(err)
-			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: chatID,
-				Text:   "Упс, комплимент где-то зажевался😿. Пишу что-то от себя...",
-			})
-			b.SendChatAction(ctx, &bot.SendChatActionParams{
-				ChatID: chatID,
-				Action: models.ChatActionTyping,
-			})
-			time.Sleep(300 * time.Millisecond)
-			b.SendMessage(ctx, &bot.SendMessageParams{
-				ChatID: chatID,
-				Text:   compliment,
-			})
-			return
-		}
-
-		b.SendPhoto(ctx, &bot.SendPhotoParams{
+		time.Sleep(300 * time.Millisecond)
+		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: chatID,
-			Photo: &models.InputFileUpload{
-				Filename: "cat.png",
-				Data:     bytes.NewReader(imgBytes),
-			},
+			Text:   compliment,
 		})
+		return
+	}
+
+	b.SendPhoto(ctx, &bot.SendPhotoParams{
+		ChatID: chatID,
+		Photo: &models.InputFileUpload{
+			Filename: "cat.png",
+			Data:     bytes.NewReader(imgBytes),
+		},
+	})
+}
+
+// ComplimentImageHandler обрабатывает запрос на получение комплимента от пользователя
+func ComplimentImageHandler(app *app.App) bot.HandlerFunc {
+	return func(ctx context.Context, b *bot.Bot, update *models.Update) {
+		sendComplimentImage(ctx, b, app, update.Message.Chat.ID)
 	}
 }
 
+// ScheduledComplimentImageHandler обрабатывает отправку комплимента по расписанию
 func ScheduledComplimentImageHandler(ctx context.Context, app *app.App, b *bot.Bot, chatID int64) {
-	update := &models.Update{Message: &models.Message{Chat: models.Chat{ID: chatID}}}
-	ComplimentImageHandler(app)(ctx, b, update)
+	sendComplimentImage(ctx, b, app, chatID)
 }
