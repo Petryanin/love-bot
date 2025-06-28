@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/Petryanin/love-bot/internal/app"
@@ -19,7 +20,7 @@ func HelpHandler(app *app.App) bot.HandlerFunc {
 		if sess.State != services.StateRoot {
 			b.SendMessage(ctx, &bot.SendMessageParams{
 				ChatID: chatID,
-				Text:   "В данный момент команда недоступна😢",
+				Text:   MsgCommandNotAvailable,
 			})
 			return
 		}
@@ -29,25 +30,17 @@ func HelpHandler(app *app.App) bot.HandlerFunc {
 			ChatID: chatID,
 			Action: models.ChatActionTyping,
 		})
-
-		helpText := strings.Join([]string{
-			"Вот что я умею:",
-			"",
-			"*Команды:*",
-			"/start — приветствие и главное меню",
-			"/help — показать это сообщение",
-			"",
-			"*Кнопки:*",
-			"\"" + config.WeatherBtn + "\" — краткая сводка текущей погоды",
-			"\"" + strings.Replace(config.ComplimentBtn, "-", "\\-", -1) + "\" — картинка с котом и комплиментом",
-			"\"" + config.PlansBtn + "\" — меню планов и напоминаний",
-			"\"" + config.TogetherTimeBtn + "\" — время ваших отношений",
-			"\"" + config.MagicBallBtn + "\" — поможет тебе принять решение",
-			"\"" + config.SettingsBtn + "\" — меню твоих настроек",
-		}, "\n")
 		b.SendMessage(ctx, &bot.SendMessageParams{
-			ChatID:    chatID,
-			Text:      helpText,
+			ChatID: upd.Message.Chat.ID,
+			Text: fmt.Sprintf(
+				MsgHelp,
+				config.WeatherBtn,
+				strings.ReplaceAll(config.ComplimentBtn, "-", "\\-"),
+				config.PlansBtn,
+				config.TogetherTimeBtn,
+				config.MagicBallBtn,
+				config.SettingsBtn,
+			),
 			ParseMode: models.ParseModeMarkdown,
 		})
 	}
